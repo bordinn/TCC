@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FYT</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+  <header>
+    <div>FYT – Find Your Talent</div>
+    <div>Olá, Coordenador!</div>
+  </header>
+
+  <div class="container">
+    <label>Selecione a sua área:</label>
+    <select>
+      <option>RH</option>
+      <option>Contábil</option>
+      <option>Jurídico</option>
+      <option>TI</option>
+      <option>Treinamento</option>
+      <option>Compras</option>
+    </select>
+
+    <!-- Área clicável para upload -->
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+      <img src="{{ url_for('static', filename='Icons/732220.png') }}" alt="Excel icon">
+      <p><strong>Envio de métricas.</strong></p>
+    </div>
+
+    <div class="format-info">Em formato .XLS ou .XLSX</div>
+
+    <!-- Formulário com input escondido -->
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+      <input id="fileInput" type="file" name="file" accept=".xls,.xlsx" style="display: none;" />
+      <button class="enviar-btn" type="submit">ENVIAR</button>
+    </form>
+  </div>
+
+  <!-- Mensagem de alerta tipo popup -->
+  <div id="mensagemPopup" class="popup-mensagem"></div>
+
+  <!-- Botão flutuante para página de análise (corrigido com aspas simples externas e duplas internas) -->
+  <button
+    type="button"
+    onclick='window.location.href="{{ url_for("dados") }}"'
+    class="botao-analise"
+    title="Ir para análise de dados"
+  >
+    📊 Análise
+  </button>
+
+  <!-- Script de validação -->
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const mensagemPopup = document.getElementById('mensagemPopup');
+
+    form.addEventListener('submit', function (e) {
+      const file = fileInput.files[0];
+
+      if (!file) {
+        e.preventDefault();
+        mostrarMensagem("Nenhum arquivo selecionado");
+        return;
+      }
+
+      const extensao = file.name.split('.').pop().toLowerCase();
+      if (extensao !== 'xls' && extensao !== 'xlsx') {
+        e.preventDefault();
+        mostrarMensagem("Arquivo não suportado");
+        return;
+      }
+    });
+
+    function mostrarMensagem(msg) {
+      mensagemPopup.textContent = msg;
+      mensagemPopup.classList.add('show');
+
+      setTimeout(() => {
+        mensagemPopup.classList.remove('show');
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>
