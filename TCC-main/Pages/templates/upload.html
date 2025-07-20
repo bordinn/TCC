@@ -2,12 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FYT</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FYT – Upload</title>
+  <link rel="stylesheet" href="../static/styles.css" />
+  <link rel="icon" href="../static/icons/732220.png" type="image/png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-
   <header>
     <div>FYT – Find Your Talent</div>
     <div>Olá, Coordenador!</div>
@@ -15,7 +16,7 @@
 
   <div class="container">
     <label>Selecione a sua área:</label>
-    <select>
+    <select id="areaSelect">
       <option>RH</option>
       <option>Contábil</option>
       <option>Jurídico</option>
@@ -24,66 +25,85 @@
       <option>Compras</option>
     </select>
 
-    <!-- Área clicável para upload -->
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-      <img src="{{ url_for('static', filename='Icons/732220.png') }}" alt="Excel icon">
-      <p><strong>Envio de métricas.</strong></p>
+      <img src="../static/icons/732220.png" alt="Excel icon" style="width: 80px; height: 80px; margin: 20px auto; display: block;" />
     </div>
 
     <div class="format-info">Em formato .XLS ou .XLSX</div>
 
-    <!-- Formulário com input escondido -->
-    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
-      <input id="fileInput" type="file" name="file" accept=".xls,.xlsx" style="display: none;" />
-      <button class="enviar-btn" type="submit">ENVIAR</button>
-    </form>
+    <input type="file" id="fileInput" accept=".xls,.xlsx" style="display:none" />
+    <div id="nome-arquivo" style="margin-top: 10px; font-weight: bold;"></div>
+
+    <button id="botaoEnviar" style="margin-top: 20px; padding: 10px 20px; font-weight: bold; background-color: #e07b3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+      Enviar Arquivo
+    </button>
+
+    <div id="mensagem" style="margin-top: 15px; color: red;"></div>
+    <div id="output"></div>
+
+    <div style="position: fixed; bottom: 20px; right: 20px;">
+      <button onclick="window.location.href = 'dados.html'" style="text-decoration: none; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+        Ir para dados
+      </button>
+    </div>
   </div>
 
-  <!-- Mensagem de alerta tipo popup -->
-  <div id="mensagemPopup" class="popup-mensagem"></div>
-
-  <!-- Botão flutuante para página de análise (corrigido com aspas simples externas e duplas internas) -->
-  <button
-    type="button"
-    onclick='window.location.href="{{ url_for("dados") }}"'
-    class="botao-analise"
-    title="Ir para análise de dados"
-  >
-    📊 Análise
-  </button>
-
-  <!-- Script de validação -->
   <script>
-    const form = document.getElementById('uploadForm');
-    const fileInput = document.getElementById('fileInput');
-    const mensagemPopup = document.getElementById('mensagemPopup');
+    let arquivoSelecionado = null;
 
-    form.addEventListener('submit', function (e) {
-      const file = fileInput.files[0];
+    document.getElementById("fileInput").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      const nomeArquivo = document.getElementById("nome-arquivo");
+      const mensagem = document.getElementById("mensagem");
+      mensagem.textContent = "";
 
       if (!file) {
-        e.preventDefault();
-        mostrarMensagem("Nenhum arquivo selecionado");
+        nomeArquivo.textContent = "";
+        arquivoSelecionado = null;
         return;
       }
 
-      const extensao = file.name.split('.').pop().toLowerCase();
-      if (extensao !== 'xls' && extensao !== 'xlsx') {
-        e.preventDefault();
-        mostrarMensagem("Arquivo não suportado");
+      const extensao = file.name.split(".").pop().toLowerCase();
+      if (!["xls", "xlsx"].includes(extensao)) {
+        mensagem.textContent = "Formato inválido. Envie um arquivo .XLS ou .XLSX.";
+        nomeArquivo.textContent = "";
+        arquivoSelecionado = null;
         return;
       }
+
+      nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
+      arquivoSelecionado = file;
     });
 
-    function mostrarMensagem(msg) {
-      mensagemPopup.textContent = msg;
-      mensagemPopup.classList.add('show');
+    document.getElementById("botaoEnviar").addEventListener("click", function () {
+      const mensagem = document.getElementById("mensagem");
+      mensagem.textContent = "";
 
-      setTimeout(() => {
-        mensagemPopup.classList.remove('show');
-      }, 3000);
-    }
+      if (!arquivoSelecionado) {
+        mensagem.textContent = "Nenhum arquivo foi selecionado.";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        if (json.length === 0) {
+          mensagem.textContent = "A planilha está vazia.";
+          return;
+        }
+
+        localStorage.setItem("dadosExcel", JSON.stringify(json));
+        localStorage.setItem("nomeArquivoExcel", arquivoSelecionado.name);
+        mensagem.style.color = 'green';
+        mensagem.textContent = "Arquivo processado com sucesso. Dados armazenados.";
+      };
+      reader.readAsArrayBuffer(arquivoSelecionado);
+    });
   </script>
-
 </body>
 </html>

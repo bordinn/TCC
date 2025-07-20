@@ -3,159 +3,171 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FYT</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <title>FYT – Dados</title>
+  <link rel="stylesheet" href="../static/styles-dados.css" />
+  <link rel="icon" href="../static/icons/732220.png" type="image/png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-    }
-    header {
-      background-color: #e07b3c;
-      color: white;
-      padding: 10px;
-      font-weight: bold;
-      font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-left: 10px;
-      padding-right: 10px;
-    }
-    .container {
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    h2 {
-      margin-bottom: 20px;
-      color: #333;
-      font-weight: 600;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-      box-shadow: 0 2px 5px rgb(0 0 0 / 0.1);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    table th, table td {
-      padding: 12px 15px;
-      text-align: left;
-      font-size: 14px;
-      border-bottom: 1px solid #ddd;
-      color: #555;
-    }
-    table th {
-      background-color: #e07b3c;
-      color: white;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    table tbody tr:hover {
-      background-color: #f1f1f1;
-    }
-    .bonus-section {
-      text-align: right;
-      font-weight: bold;
-      font-size: 16px;
       margin-top: 20px;
-      color: #333;
     }
-
-    /* Botão flutuante igual ao upload */
-    .botao-voltar {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: #007bff;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 30px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 15px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-      z-index: 1000;
-      cursor: pointer;
-      border: none;
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: left;
     }
-    .botao-voltar:hover {
-      background-color: #0056b3;
-      transform: scale(1.05);
+    th {
+      background-color: #eee;
+    }
+    .filtro-container {
+      margin: 20px 0;
+      background-color: #f7f7f7;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .filtro-container h3 {
+      margin-bottom: 10px;
+    }
+    .filtro {
+      margin: 5px 10px 10px 0;
+      padding: 8px;
+      width: 250px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      display: inline-block;
     }
   </style>
 </head>
 <body>
-
   <header>
     <div>FYT – Find Your Talent</div>
-    <div>Análise das métricas</div>
+    <div>Resultados da Análise</div>
   </header>
 
   <div class="container">
-    <h2>Métricas por colaborador</h2>
+    <h2>Relatório da Análise</h2>
+    <a href="../static/resultado_analise.xlsx" download style="display: inline-block; margin-bottom: 20px; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+      Baixar Análise
+    </a>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Matrícula</th>
-          <th>Nome Completo</th>
-          <th>Departamento</th>
-          <th>Cargo</th>
-          <th>Data de Admissão</th>
-          <th>Avaliação Técnica (0-10)</th>
-          <th>Avaliação Comportamental (0-10)</th>
-          <th>Projetos Concluídos</th>
-          <th>Cursos Obrigatórios</th>
-          <th>Cursos Adicionais</th>
-          <th>Avaliação de Soft Skills</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if dados %}
-          {% for row in dados %}
-          <tr>
-            <td>{{ row['Matrícula'] }}</td>
-            <td>{{ row['Nome Completo'] }}</td>
-            <td>{{ row['Departamento'] }}</td>
-            <td>{{ row['Cargo'] }}</td>
-            <td>{{ row['Data de Admissão'] }}</td>
-            <td>{{ row['Avaliação Técnica (0-10)'] }}</td>
-            <td>{{ row['Avaliação Comportamental (0-10)'] }}</td>
-            <td>{{ row['Projetos Concluídos'] }}</td>
-            <td>{{ row['Cursos Obrigatórios'] }}</td>
-            <td>{{ row['Cursos Adicionais'] }}</td>
-            <td>{{ row['Avaliação de Soft Skills'] }}</td>
-          </tr>
-          {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="11" style="text-align:center; color:#888; font-style: italic;">
-              Nenhum dado disponível.
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-
-    <div class="bonus-section">
-      Bonificação indicada: R$ {{ bonus }}
+    <div class="filtro-container">
+      <h3>Filtros</h3>
+      <input type="text" id="filtroMatricula" class="filtro" placeholder="Filtrar por Matrícula">
+      <input type="text" id="filtroNome" class="filtro" placeholder="Filtrar por Nome Completo">
+      <input type="text" id="filtroDepartamento" class="filtro" placeholder="Filtrar por Departamento">
+      <input type="text" id="filtroCargo" class="filtro" placeholder="Filtrar por Cargo">
+      <input type="text" id="filtroAdmissao" class="filtro" placeholder="Filtrar por Data de Admissão">
+      <input type="text" id="filtroTecnica" class="filtro" placeholder="Filtrar por Avaliação Técnica">
+      <input type="text" id="filtroComportamental" class="filtro" placeholder="Filtrar por Avaliação Comportamental">
+      <input type="text" id="filtroProjetos" class="filtro" placeholder="Filtrar por Projetos Concluídos">
+      <input type="text" id="filtroObrigatorios" class="filtro" placeholder="Filtrar por Cursos Obrigatórios">
+      <input type="text" id="filtroAdicionais" class="filtro" placeholder="Filtrar por Cursos Adicionais">
+      <input type="text" id="filtroSoftskills" class="filtro" placeholder="Filtrar por Avaliação de Softskills">
     </div>
+
+    <table id="tabela-dados">
+      <thead id="cabecalho-tabela"></thead>
+      <tbody id="corpo-tabela"></tbody>
+    </table>
   </div>
 
-  <!-- Botão flutuante para voltar à página inicial -->
-  <button
-    class="botao-voltar"
-    onclick="window.location.href='{{ url_for('upload_form') }}'"
-    title="Voltar para upload"
-  >
-    ← Voltar
-  </button>
+  <div style="position: fixed; bottom: 20px; right: 20px;">
+    <button onclick="window.location.href = 'upload.html'" style="text-decoration: none; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+      Voltar ao upload
+    </button>
+  </div>
 
+  <script>
+    const tabela = document.getElementById("tabela-dados");
+    const cabecalhoTabela = document.getElementById("cabecalho-tabela");
+    const corpoTabela = document.getElementById("corpo-tabela");
+
+    const filtros = {
+      "Matrícula": document.getElementById("filtroMatricula"),
+      "Nome Completo": document.getElementById("filtroNome"),
+      "Departamento": document.getElementById("filtroDepartamento"),
+      "Cargo": document.getElementById("filtroCargo"),
+      "Data de Admissão": document.getElementById("filtroAdmissao"),
+      "Avaliação Técnica (0-10)": document.getElementById("filtroTecnica"),
+      "Avaliação Comportamental (0-10)": document.getElementById("filtroComportamental"),
+      "Projetos Concluídos": document.getElementById("filtroProjetos"),
+      "Cursos Obrigatórios": document.getElementById("filtroObrigatorios"),
+      "Cursos Adicionais": document.getElementById("filtroAdicionais"),
+      "Avaliação de softskills": document.getElementById("filtroSoftskills")
+    };
+
+    fetch("../static/resultado_analise.xlsx")
+      .then(res => res.arrayBuffer())
+      .then(data => {
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        let dados = XLSX.utils.sheet_to_json(sheet);
+
+        dados = dados.map(item => {
+          return {
+            "Matrícula": item["MatrÃ­cula"] || item["Matrícula"],
+            "Nome Completo": item["Nome Completo"],
+            "Departamento": item["Departamento"],
+            "Cargo": item["Cargo"],
+            "Data de Admissão": item["Data de AdmissÃ£o"] || item["Data de Admissão"],
+            "Avaliação Técnica (0-10)": item["AvaliaÃ§Ã£o TÃ©cnica (0-10)"] || item["Avaliação Técnica (0-10)"],
+            "Avaliação Comportamental (0-10)": item["AvaliaÃ§Ã£o Comportamental (0-10)"] || item["Avaliação Comportamental (0-10)"],
+            "Projetos Concluídos": item["Projetos ConcluÃ­dos"] || item["Projetos Concluídos"],
+            "Cursos Obrigatórios": item["Cursos ObrigatÃ³rios"] || item["Cursos Obrigatórios"],
+            "Cursos Adicionais": item["Cursos Adicionais"],
+            "Avaliação de softskills": item["AvaliaÃ§Ã£o de softskills"] || item["Avaliação de softskills"]
+          };
+        });
+
+        function renderizarTabela(dadosFiltrados) {
+          cabecalhoTabela.innerHTML = "";
+          corpoTabela.innerHTML = "";
+
+          if (dadosFiltrados.length === 0) {
+            corpoTabela.innerHTML = "<tr><td colspan='100%'>Nenhum dado encontrado.</td></tr>";
+            return;
+          }
+
+          const headers = Object.keys(dadosFiltrados[0]);
+          const trHead = document.createElement("tr");
+          headers.forEach(header => {
+            const th = document.createElement("th");
+            th.textContent = header;
+            trHead.appendChild(th);
+          });
+          cabecalhoTabela.appendChild(trHead);
+
+          dadosFiltrados.forEach(item => {
+            const tr = document.createElement("tr");
+            headers.forEach(key => {
+              const td = document.createElement("td");
+              td.textContent = item[key];
+              tr.appendChild(td);
+            });
+            corpoTabela.appendChild(tr);
+          });
+        }
+
+        function aplicarFiltros() {
+          const filtrados = dados.filter(item => {
+            return Object.keys(filtros).every(campo => {
+              const input = filtros[campo].value.toLowerCase();
+              return item[campo]?.toString().toLowerCase().includes(input);
+            });
+          });
+
+          renderizarTabela(filtrados);
+        }
+
+        Object.values(filtros).forEach(input => input.addEventListener("input", aplicarFiltros));
+        renderizarTabela(dados);
+      })
+      .catch(() => {
+        corpoTabela.innerHTML = "<tr><td colspan='100%'>Erro ao carregar os dados da análise.</td></tr>";
+      });
+  </script>
 </body>
 </html>
