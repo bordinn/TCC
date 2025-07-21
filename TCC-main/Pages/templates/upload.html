@@ -6,7 +6,6 @@
   <title>FYT – Upload</title>
   <link rel="stylesheet" href="../static/styles.css" />
   <link rel="icon" href="../static/icons/732220.png" type="image/png">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
   <header>
@@ -26,12 +25,12 @@
     </select>
 
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-      <img src="../static/icons/732220.png" alt="Excel icon" style="width: 80px; height: 80px; margin: 20px auto; display: block;" />
+      <img src="../static/icons/732220.png" alt="CSV icon" style="width: 80px; height: 80px; margin: 20px auto; display: block;" />
     </div>
 
-    <div class="format-info">Em formato .XLS ou .XLSX</div>
+    <div class="format-info">Em formato .CSV</div>
 
-    <input type="file" id="fileInput" accept=".xls,.xlsx" style="display:none" />
+    <input type="file" id="fileInput" accept=".csv" style="display:none" />
     <div id="nome-arquivo" style="margin-top: 10px; font-weight: bold;"></div>
 
     <button id="botaoEnviar" style="margin-top: 20px; padding: 10px 20px; font-weight: bold; background-color: #e07b3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
@@ -39,7 +38,6 @@
     </button>
 
     <div id="mensagem" style="margin-top: 15px; color: red;"></div>
-    <div id="output"></div>
 
     <div style="position: fixed; bottom: 20px; right: 20px;">
       <button onclick="window.location.href = 'dados.html'" style="text-decoration: none; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">
@@ -48,62 +46,67 @@
     </div>
   </div>
 
-  <script>
-    let arquivoSelecionado = null;
+<script>
+let arquivoSelecionado = null;
 
-    document.getElementById("fileInput").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      const nomeArquivo = document.getElementById("nome-arquivo");
-      const mensagem = document.getElementById("mensagem");
-      mensagem.textContent = "";
+document.getElementById("fileInput").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  const nomeArquivo = document.getElementById("nome-arquivo");
+  const mensagem = document.getElementById("mensagem");
+  mensagem.textContent = "";
 
-      if (!file) {
-        nomeArquivo.textContent = "";
-        arquivoSelecionado = null;
-        return;
-      }
+  if (!file) {
+    nomeArquivo.textContent = "";
+    arquivoSelecionado = null;
+    return;
+  }
 
-      const extensao = file.name.split(".").pop().toLowerCase();
-      if (!["xls", "xlsx"].includes(extensao)) {
-        mensagem.textContent = "Formato inválido. Envie um arquivo .XLS ou .XLSX.";
-        nomeArquivo.textContent = "";
-        arquivoSelecionado = null;
-        return;
-      }
+  const extensao = file.name.split(".").pop().toLowerCase();
+  if (extensao !== "csv") {
+    mensagem.textContent = "Formato inválido. Envie um arquivo .CSV.";
+    nomeArquivo.textContent = "";
+    arquivoSelecionado = null;
+    return;
+  }
 
-      nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
-      arquivoSelecionado = file;
+  nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
+  arquivoSelecionado = file;
+});
+
+document.getElementById("botaoEnviar").addEventListener("click", async function () {
+  const mensagem = document.getElementById("mensagem");
+  mensagem.style.color = 'red';
+  mensagem.textContent = "";
+
+  if (!arquivoSelecionado) {
+    mensagem.textContent = "Nenhum arquivo foi selecionado.";
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', arquivoSelecionado); // campo 'file' é importante para o n8n
+    formData.append('nomeArquivo', arquivoSelecionado.name);
+    formData.append('area', document.getElementById("areaSelect").value);
+
+    const resposta = await fetch('https://tccgp1.app.n8n.cloud/webhook-test/upload-planilha', {
+      method: 'POST',
+      body: formData
     });
 
-    document.getElementById("botaoEnviar").addEventListener("click", function () {
-      const mensagem = document.getElementById("mensagem");
-      mensagem.textContent = "";
+    if (!resposta.ok) {
+      throw new Error("Erro ao enviar para o workflow do n8n");
+    }
 
-      if (!arquivoSelecionado) {
-        mensagem.textContent = "Nenhum arquivo foi selecionado.";
-        return;
-      }
+    mensagem.style.color = 'green';
+    mensagem.textContent = "Arquivo enviado com sucesso para o workflow!";
+  } catch (erro) {
+    console.error(erro);
+    mensagem.style.color = 'red';
+    mensagem.textContent = "Falha ao enviar o arquivo para o workflow.";
+  }
+});
+</script>
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const json = XLSX.utils.sheet_to_json(sheet);
-
-        if (json.length === 0) {
-          mensagem.textContent = "A planilha está vazia.";
-          return;
-        }
-
-        localStorage.setItem("dadosExcel", JSON.stringify(json));
-        localStorage.setItem("nomeArquivoExcel", arquivoSelecionado.name);
-        mensagem.style.color = 'green';
-        mensagem.textContent = "Arquivo processado com sucesso. Dados armazenados.";
-      };
-      reader.readAsArrayBuffer(arquivoSelecionado);
-    });
-  </script>
 </body>
 </html>
