@@ -29,7 +29,6 @@
     </div>
 
     <div class="format-info">Em formato .CSV</div>
-
     <input type="file" id="fileInput" accept=".csv" style="display:none" />
     <div id="nome-arquivo" style="margin-top: 10px; font-weight: bold;"></div>
 
@@ -38,75 +37,71 @@
     </button>
 
     <div id="mensagem" style="margin-top: 15px; color: red;"></div>
-
-    <div style="position: fixed; bottom: 20px; right: 20px;">
-      <button onclick="window.location.href = 'dados.html'" style="text-decoration: none; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">
-        Ir para dados
-      </button>
-    </div>
   </div>
 
-<script>
-let arquivoSelecionado = null;
+  <script>
+    let arquivoSelecionado = null;
 
-document.getElementById("fileInput").addEventListener("change", function (e) {
-  const file = e.target.files[0];
-  const nomeArquivo = document.getElementById("nome-arquivo");
-  const mensagem = document.getElementById("mensagem");
-  mensagem.textContent = "";
+    document.getElementById("fileInput").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      const nomeArquivo = document.getElementById("nome-arquivo");
+      const mensagem = document.getElementById("mensagem");
+      mensagem.textContent = "";
 
-  if (!file) {
-    nomeArquivo.textContent = "";
-    arquivoSelecionado = null;
-    return;
-  }
+      if (!file) {
+        nomeArquivo.textContent = "";
+        arquivoSelecionado = null;
+        return;
+      }
 
-  const extensao = file.name.split(".").pop().toLowerCase();
-  if (extensao !== "csv") {
-    mensagem.textContent = "Formato inválido. Envie um arquivo .CSV.";
-    nomeArquivo.textContent = "";
-    arquivoSelecionado = null;
-    return;
-  }
+      const extensao = file.name.split(".").pop().toLowerCase();
+      if (extensao !== "csv") {
+        mensagem.textContent = "Formato inválido. Envie um arquivo .CSV.";
+        nomeArquivo.textContent = "";
+        arquivoSelecionado = null;
+        return;
+      }
 
-  nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
-  arquivoSelecionado = file;
-});
-
-document.getElementById("botaoEnviar").addEventListener("click", async function () {
-  const mensagem = document.getElementById("mensagem");
-  mensagem.style.color = 'red';
-  mensagem.textContent = "";
-
-  if (!arquivoSelecionado) {
-    mensagem.textContent = "Nenhum arquivo foi selecionado.";
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append('file', arquivoSelecionado); // campo 'file' é importante para o n8n
-    formData.append('nomeArquivo', arquivoSelecionado.name);
-    formData.append('area', document.getElementById("areaSelect").value);
-
-    const resposta = await fetch('https://tccgp1.app.n8n.cloud/webhook-test/upload-planilha', {
-      method: 'POST',
-      body: formData
+      nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
+      arquivoSelecionado = file;
     });
 
-    if (!resposta.ok) {
-      throw new Error("Erro ao enviar para o workflow do n8n");
-    }
+    document.getElementById("botaoEnviar").addEventListener("click", async function () {
+      const mensagem = document.getElementById("mensagem");
+      mensagem.style.color = 'red';
+      mensagem.textContent = "";
 
-    mensagem.style.color = 'green';
-    mensagem.textContent = "Arquivo enviado com sucesso para o workflow!";
-  } catch (erro) {
-    console.error(erro);
-    mensagem.style.color = 'red';
-    mensagem.textContent = "Falha ao enviar o arquivo para o workflow.";
-  }
-});
-</script>
+      if (!arquivoSelecionado) {
+        mensagem.textContent = "Nenhum arquivo foi selecionado.";
+        return;
+      }
 
+      try {
+        const formData = new FormData();
+        formData.append('file', arquivoSelecionado);
+        formData.append('area', document.getElementById("areaSelect").value);
+
+        const resposta = await fetch('https://tccgp1.app.n8n.cloud/webhook/upload-planilha', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!resposta.ok) {
+          throw new Error("Erro ao enviar para o workflow do n8n");
+        }
+
+        mensagem.style.color = 'green';
+        mensagem.textContent = "Arquivo enviado com sucesso! Redirecionando...";
+        setTimeout(() => {
+          window.location.href = "dados.html";
+        }, 4000);
+
+      } catch (erro) {
+        console.error(erro);
+        mensagem.style.color = 'red';
+        mensagem.textContent = "Falha ao enviar o arquivo para o workflow.";
+      }
+    });
+  </script>
 </body>
 </html>

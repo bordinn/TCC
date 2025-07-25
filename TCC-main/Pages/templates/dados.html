@@ -6,37 +6,21 @@
   <title>FYT – Dados</title>
   <link rel="stylesheet" href="../static/styles-dados.css" />
   <link rel="icon" href="../static/icons/732220.png" type="image/png">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #ccc;
-      text-align: left;
-    }
-    th {
-      background-color: #eee;
-    }
-    .filtro-container {
-      margin: 20px 0;
-      background-color: #f7f7f7;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .filtro-container h3 {
-      margin-bottom: 10px;
-    }
-    .filtro {
-      margin: 5px 10px 10px 0;
-      padding: 8px;
-      width: 250px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      display: inline-block;
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    th { background-color: #eee; }
+    .filtro-container { margin: 20px 0; background-color: #f7f7f7; padding: 15px; border-radius: 8px; }
+    .filtro-container h3 { margin-bottom: 10px; }
+    .filtro { margin: 5px 10px 10px 0; padding: 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px; display: inline-block; }
+    .botoes-relatorios button {
+      margin: 10px 10px 0 0;
+      padding: 8px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -45,12 +29,9 @@
     <div>FYT – Find Your Talent</div>
     <div>Resultados da Análise</div>
   </header>
-
   <div class="container">
     <h2>Relatório da Análise</h2>
-    <a href="../static/resultado_analise.xlsx" download style="display: inline-block; margin-bottom: 20px; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold;">
-      Baixar Análise
-    </a>
+    <div class="botoes-relatorios" id="botoesRelatorios"></div>
 
     <div class="filtro-container">
       <h3>Filtros</h3>
@@ -72,17 +53,15 @@
       <tbody id="corpo-tabela"></tbody>
     </table>
   </div>
-
   <div style="position: fixed; bottom: 20px; right: 20px;">
-    <button onclick="window.location.href = 'upload.html'" style="text-decoration: none; background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">
-      Voltar ao upload
-    </button>
+    <button onclick="window.location.href = 'upload.html'" style="background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer;">Voltar ao upload</button>
   </div>
 
   <script>
     const tabela = document.getElementById("tabela-dados");
     const cabecalhoTabela = document.getElementById("cabecalho-tabela");
     const corpoTabela = document.getElementById("corpo-tabela");
+    const botoesRelatorios = document.getElementById("botoesRelatorios");
 
     const filtros = {
       "Matrícula": document.getElementById("filtroMatricula"),
@@ -98,75 +77,72 @@
       "Avaliação de softskills": document.getElementById("filtroSoftskills")
     };
 
-    fetch("../static/resultado_analise.xlsx")
-      .then(res => res.arrayBuffer())
-      .then(data => {
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        let dados = XLSX.utils.sheet_to_json(sheet);
+    function renderizarTabela(dados) {
+      cabecalhoTabela.innerHTML = "";
+      corpoTabela.innerHTML = "";
+      if (dados.length === 0) {
+        corpoTabela.innerHTML = "<tr><td colspan='100%'>Nenhum dado encontrado.</td></tr>";
+        return;
+      }
+      const headers = Object.keys(dados[0]);
+      const trHead = document.createElement("tr");
+      headers.forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header;
+        trHead.appendChild(th);
+      });
+      cabecalhoTabela.appendChild(trHead);
 
-        dados = dados.map(item => {
-          return {
-            "Matrícula": item["MatrÃ­cula"] || item["Matrícula"],
-            "Nome Completo": item["Nome Completo"],
-            "Departamento": item["Departamento"],
-            "Cargo": item["Cargo"],
-            "Data de Admissão": item["Data de AdmissÃ£o"] || item["Data de Admissão"],
-            "Avaliação Técnica (0-10)": item["AvaliaÃ§Ã£o TÃ©cnica (0-10)"] || item["Avaliação Técnica (0-10)"],
-            "Avaliação Comportamental (0-10)": item["AvaliaÃ§Ã£o Comportamental (0-10)"] || item["Avaliação Comportamental (0-10)"],
-            "Projetos Concluídos": item["Projetos ConcluÃ­dos"] || item["Projetos Concluídos"],
-            "Cursos Obrigatórios": item["Cursos ObrigatÃ³rios"] || item["Cursos Obrigatórios"],
-            "Cursos Adicionais": item["Cursos Adicionais"],
-            "Avaliação de softskills": item["AvaliaÃ§Ã£o de softskills"] || item["Avaliação de softskills"]
-          };
+      dados.forEach(item => {
+        const tr = document.createElement("tr");
+        headers.forEach(key => {
+          const td = document.createElement("td");
+          td.textContent = item[key] || "";
+          tr.appendChild(td);
         });
+        corpoTabela.appendChild(tr);
+      });
+    }
 
-        function renderizarTabela(dadosFiltrados) {
-          cabecalhoTabela.innerHTML = "";
-          corpoTabela.innerHTML = "";
+    function aplicarFiltros(dados) {
+      const filtrados = dados.filter(item => {
+        return Object.keys(filtros).every(campo => {
+          const input = filtros[campo].value.toLowerCase();
+          return item[campo]?.toString().toLowerCase().includes(input);
+        });
+      });
+      renderizarTabela(filtrados);
+    }
 
-          if (dadosFiltrados.length === 0) {
-            corpoTabela.innerHTML = "<tr><td colspan='100%'>Nenhum dado encontrado.</td></tr>";
-            return;
+    function prepararTabela(dados) {
+      Object.values(filtros).forEach(input => {
+        input.removeEventListener("input", aplicarFiltros);
+        input.addEventListener("input", () => aplicarFiltros(dados));
+      });
+      renderizarTabela(dados);
+    }
+
+    fetch("https://tccgp1.app.n8n.cloud/webhook/relatorios")
+      .then(res => res.json())
+      .then(data => {
+        const relatorios = data.relatorios || {};
+        let dadosPresentes = false;
+        for (const cenario in relatorios) {
+          const dados = relatorios[cenario];
+          if (Array.isArray(dados) && dados.length > 0) {
+            dadosPresentes = true;
+            const btn = document.createElement("button");
+            btn.textContent = `Visualizar: ${cenario}`;
+            btn.onclick = () => prepararTabela(dados);
+            botoesRelatorios.appendChild(btn);
           }
-
-          const headers = Object.keys(dadosFiltrados[0]);
-          const trHead = document.createElement("tr");
-          headers.forEach(header => {
-            const th = document.createElement("th");
-            th.textContent = header;
-            trHead.appendChild(th);
-          });
-          cabecalhoTabela.appendChild(trHead);
-
-          dadosFiltrados.forEach(item => {
-            const tr = document.createElement("tr");
-            headers.forEach(key => {
-              const td = document.createElement("td");
-              td.textContent = item[key];
-              tr.appendChild(td);
-            });
-            corpoTabela.appendChild(tr);
-          });
         }
-
-        function aplicarFiltros() {
-          const filtrados = dados.filter(item => {
-            return Object.keys(filtros).every(campo => {
-              const input = filtros[campo].value.toLowerCase();
-              return item[campo]?.toString().toLowerCase().includes(input);
-            });
-          });
-
-          renderizarTabela(filtrados);
+        if (!dadosPresentes) {
+          botoesRelatorios.innerHTML = "Nenhum cenário retornou dados.";
         }
-
-        Object.values(filtros).forEach(input => input.addEventListener("input", aplicarFiltros));
-        renderizarTabela(dados);
       })
       .catch(() => {
-        corpoTabela.innerHTML = "<tr><td colspan='100%'>Erro ao carregar os dados da análise.</td></tr>";
+        botoesRelatorios.innerHTML = "Erro ao carregar os relatórios.";
       });
   </script>
 </body>
