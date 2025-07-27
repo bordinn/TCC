@@ -1,0 +1,508 @@
+{
+  "name": "IA_FYT",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-planilha",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "c0024b18-0ad6-446c-acee-676c002c1b41",
+      "name": "Webhook Upload Planilha",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        -96
+      ],
+      "webhookId": "f4b47c4b-9280-446e-99f9-0a962c34584d"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "file",
+        "options": {
+          "delimiter": ","
+        }
+      },
+      "id": "3a2eaba5-5597-4aca-81f6-5a8e98f7f2f7",
+      "name": "Extract CSV Data",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dadosLimpos = items.filter(item => {\n  const data = item.json;\n  return data[\"Matrícula\"] && data[\"Nome Completo\"] && data.Departamento;\n});\n\nconsole.log('Total de funcionários válidos:', dadosLimpos.length);\n\nreturn [{ json: { dados_processados: dadosLimpos.map(item => item.json) } }];"
+      },
+      "id": "922d7f3a-67a0-41be-b625-6add9c1d6080",
+      "name": "Processar Dados",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1232,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dados = items[0].json.dados_processados;\n\nconst calcularMediaAvaliacoes = (f) => {\n  const tecnica = parseFloat(f[\"Avaliação Técnica (0-10)\"]) || 0;\n  const comportamental = parseFloat(f[\"Avaliação Comportamental (0-10)\"]) || 0;\n  const softskills = parseFloat(f[\"Avaliação de softskills\"]) || 0;\n  return (tecnica + comportamental + softskills) / 3;\n};\n\nconst departamentos = [...new Set(dados.map(f => f.Departamento))];\nconst selecionados = [];\n\ndepartamentos.forEach(dept => {\n  const grupo = dados.filter(f => f.Departamento === dept);\n  grupo.forEach(f => f.Media_Avaliacao = calcularMediaAvaliacoes(f));\n  \n  const topCount = Math.max(1, Math.floor(grupo.length * 0.2));\n  const top = grupo\n    .sort((a, b) => b.Media_Avaliacao - a.Media_Avaliacao)\n    .slice(0, topCount);\n\n  selecionados.push(...top);\n});\n\nselecionados.forEach(f => delete f.Media_Avaliacao);\n\nreturn [{ json: { cenario: 'Top Performers', dados: selecionados } }];"
+      },
+      "id": "01882446-26de-4264-a2a5-6e25a2bf6aa1",
+      "name": "Cenário Top Performers",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dados = items[0].json.dados_processados;\nconst hoje = new Date();\n\nconst selecionados = dados.filter(f => {\n  const cursos = parseInt(f[\"Cursos Adicionais\"]) || 0;\n  const comportamental = parseFloat(f[\"Avaliação Comportamental (0-10)\"]) || 0;\n  const admissao = new Date(f[\"Data de Admissão\"]);\n  const tempoEmpresaAnos = (hoje - admissao) / (1000 * 60 * 60 * 24 * 365);\n\n  return cursos >= 3 && comportamental >= 7.5 && tempoEmpresaAnos >= 1;\n});\n\nreturn [{ json: { cenario: 'Crescimento', dados: selecionados } }];"
+      },
+      "id": "8db647dd-0fbc-41e3-997b-f47898caf114",
+      "name": "Cenário Crescimento",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dados = items[0].json.dados_processados;\nconst hoje = new Date();\n\nconst selecionados = dados.filter(f => {\n  const tecnica = parseFloat(f[\"Avaliação Técnica (0-10)\"]) || 0;\n  const projetos = parseInt(f[\"Projetos Concluídos\"]) || 0;\n  const admissao = new Date(f[\"Data de Admissão\"]);\n  const tempoEmpresaAnos = (hoje - admissao) / (1000 * 60 * 60 * 24 * 365);\n\n  return tempoEmpresaAnos >= 3 && tecnica >= 8.0 && projetos >= 8;\n});\n\nreturn [{ json: { cenario: 'Veteranos', dados: selecionados } }];"
+      },
+      "id": "ca3588b3-7d97-4d0c-bdd0-d5b810842dc6",
+      "name": "Cenário Veteranos",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dados = items[0].json.dados_processados;\nconst hoje = new Date();\n\nconst selecionados = dados.filter(f => {\n  const comportamental = parseFloat(f[\"Avaliação Comportamental (0-10)\"]) || 0;\n  const softskills = parseFloat(f[\"Avaliação de softskills\"]) || 0;\n  const admissao = new Date(f[\"Data de Admissão\"]);\n  const tempoEmpresaAnos = (hoje - admissao) / (1000 * 60 * 60 * 24 * 365);\n\n  return comportamental >= 8.0 && softskills >= 8.0 && tempoEmpresaAnos >= 2;\n});\n\nreturn [{ json: { cenario: 'Liderança', dados: selecionados } }];"
+      },
+      "id": "d5a3aec4-bc11-4943-91c2-182e0b9a6f00",
+      "name": "Cenário Liderança",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const dados = items[0].json.dados_processados;\n\nconst selecionados = dados.filter(f => {\n  const projetos = parseInt(f[\"Projetos Concluídos\"]) || 0;\n  const cursos = parseInt(f[\"Cursos Adicionais\"]) || 0;\n  const tecnica = parseFloat(f[\"Avaliação Técnica (0-10)\"]) || 0;\n\n  return projetos >= 5 && cursos >= 2 && tecnica >= 7.0;\n});\n\nreturn [{ json: { cenario: 'Inovação', dados: selecionados } }];"
+      },
+      "id": "1da898ee-49de-4a9a-a8fa-d06473012f65",
+      "name": "Cenário Inovação",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -832,
+        -96
+      ],
+      "id": "e83509c0-85f8-488e-9f98-b635ed2b82e6",
+      "name": "Merge Cenários"
+    },
+    {
+      "parameters": {
+        "functionCode": "// SUBSTITUA COMPLETAMENTE o código do node \"Gerar XLSX e Salvar\":\n\n// Função para converter dados JSON em formato CSV\nfunction jsonToCSV(data) {\n  if (!data || data.length === 0) return '';\n  \n  const headers = Object.keys(data[0]);\n  const csvHeaders = headers.join(',');\n  \n  const csvRows = data.map(row => {\n    return headers.map(header => {\n      let value = row[header] || '';\n      // Escapar aspas duplas e envolver em aspas se necessário\n      if (typeof value === 'string' && (value.includes(',') || value.includes('\"') || value.includes('\\n'))) {\n        value = '\"' + value.replace(/\"/g, '\"\"') + '\"';\n      }\n      return value;\n    }).join(',');\n  });\n  \n  return [csvHeaders, ...csvRows].join('\\n');\n}\n\n// Função para criar um arquivo Excel básico em formato XML\nfunction createSimpleXLSX(data, sheetName = 'Sheet1') {\n  if (!data || data.length === 0) return null;\n  \n  const headers = Object.keys(data[0]);\n  \n  // Cabeçalho do arquivo XLSX (XML básico)\n  let xmlContent = `<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">\n<sheetData>`;\n\n  // Adicionar cabeçalhos\n  xmlContent += `<row r=\"1\">`;\n  headers.forEach((header, index) => {\n    const cellRef = String.fromCharCode(65 + index) + '1';\n    xmlContent += `<c r=\"${cellRef}\" t=\"inlineStr\"><is><t>${header}</t></is></c>`;\n  });\n  xmlContent += `</row>`;\n\n  // Adicionar dados\n  data.forEach((row, rowIndex) => {\n    const rowNum = rowIndex + 2;\n    xmlContent += `<row r=\"${rowNum}\">`;\n    \n    headers.forEach((header, colIndex) => {\n      const cellRef = String.fromCharCode(65 + colIndex) + rowNum;\n      const value = row[header] || '';\n      \n      if (typeof value === 'number') {\n        xmlContent += `<c r=\"${cellRef}\"><v>${value}</v></c>`;\n      } else {\n        xmlContent += `<c r=\"${cellRef}\" t=\"inlineStr\"><is><t>${String(value).replace(/[<>&\"']/g, function(m) {\n          return {'<':'&lt;','>':'&gt;','&':'&amp;','\"':'&quot;',\"'\":'&apos;'}[m];\n        })}</t></is></c>`;\n      }\n    });\n    \n    xmlContent += `</row>`;\n  });\n\n  xmlContent += `</sheetData></worksheet>`;\n  \n  return xmlContent;\n}\n\nconsole.log('=== INICIANDO PROCESSAMENTO DOS CENÁRIOS ===');\nconsole.log('Total de items recebidos:', items.length);\n\nconst dadosPorCenario = {};\nconst arquivosGerados = {};\n\n// Processar cada item (cenário)\nitems.forEach((item, index) => {\n  console.log(`Processando item ${index + 1}:`, item.json);\n  \n  const nomeCenario = item.json.cenario || \"Desconhecido\";\n  const dados = item.json.dados || [];\n  \n  console.log(`Cenário: ${nomeCenario}, Registros: ${dados.length}`);\n  \n  dadosPorCenario[nomeCenario] = dados;\n  \n  if (dados.length > 0) {\n    try {\n      // Gerar conteúdo CSV\n      const csvContent = jsonToCSV(dados);\n      \n      // Gerar conteúdo XML\n      const xmlContent = createSimpleXLSX(dados, nomeCenario);\n      \n      // Gerar nomes de arquivo sanitizados\n      const nomeArquivoBase = nomeCenario.replace(/[^a-zA-Z0-9\\s]/g, '').replace(/\\s+/g, '_');\n      const nomeArquivoCSV = `${nomeArquivoBase}.csv`;\n      const nomeArquivoXML = `${nomeArquivoBase}.xml`;\n      \n      arquivosGerados[nomeCenario] = {\n        nome_arquivo_csv: nomeArquivoCSV,\n        conteudo_csv: csvContent,\n        nome_arquivo_xml: nomeArquivoXML,\n        conteudo_xml: xmlContent,\n        total_registros: dados.length,\n        data_criacao: new Date().toISOString(),\n        tamanho_csv: csvContent.length,\n        tamanho_xml: xmlContent ? xmlContent.length : 0\n      };\n      \n      console.log(`✓ Arquivos gerados para ${nomeCenario}: CSV (${csvContent.length} chars) e XML (${xmlContent ? xmlContent.length : 0} chars)`);\n      \n    } catch (error) {\n      console.error(`✗ Erro ao gerar arquivos para ${nomeCenario}:`, error.message);\n      \n      arquivosGerados[nomeCenario] = {\n        nome_arquivo_csv: null,\n        conteudo_csv: null,\n        nome_arquivo_xml: null,\n        conteudo_xml: null,\n        total_registros: dados.length,\n        erro: error.message,\n        data_criacao: new Date().toISOString()\n      };\n    }\n  } else {\n    console.log(`⚠ Cenário ${nomeCenario} não tem dados`);\n    arquivosGerados[nomeCenario] = {\n      nome_arquivo_csv: null,\n      conteudo_csv: null,\n      nome_arquivo_xml: null,\n      conteudo_xml: null,\n      total_registros: 0,\n      data_criacao: new Date().toISOString()\n    };\n  }\n});\n\nconsole.log('=== SALVANDO NO STATICDATA ===');\n\n// Salvar dados no staticData com verificações extras\ntry {\n  // Verificar se $workflow está disponível\n  if (typeof $workflow === 'undefined') {\n    throw new Error('$workflow não está disponível');\n  }\n  \n  // Inicializar staticData se necessário\n  if (!$workflow.staticData) {\n    $workflow.staticData = {};\n    console.log('staticData inicializado');\n  }\n  \n  // Salvar os dados\n  $workflow.staticData.relatorios = dadosPorCenario;\n  $workflow.staticData.arquivos_conteudo = arquivosGerados;\n  $workflow.staticData.ultimaAtualizacao = new Date().toISOString();\n  $workflow.staticData.debug_info = {\n    total_cenarios: Object.keys(dadosPorCenario).length,\n    total_arquivos: Object.keys(arquivosGerados).length,\n    data_processamento: new Date().toISOString()\n  };\n  \n  console.log('✓ Dados salvos com sucesso no staticData');\n  console.log('Cenários salvos:', Object.keys(dadosPorCenario));\n  console.log('Arquivos salvos:', Object.keys(arquivosGerados));\n  \n  // Verificar se os dados foram realmente salvos\n  if ($workflow.staticData.relatorios && $workflow.staticData.arquivos_conteudo) {\n    console.log('✓ Verificação: dados persistidos corretamente');\n  } else {\n    console.error('✗ Verificação: falha na persistência dos dados');\n  }\n  \n} catch (error) {\n  console.error('✗ Erro ao salvar no staticData:', error.message);\n  console.error('Stack trace:', error.stack);\n}\n\n// Preparar resumo\nconst totalCenarios = Object.keys(dadosPorCenario).length;\nconst totalPorCenario = Object.entries(dadosPorCenario).reduce((acc, [nome, dados]) => {\n  acc[nome] = dados.length;\n  return acc;\n}, {});\n\nconst arquivosComSucesso = Object.values(arquivosGerados).filter(arq => arq.nome_arquivo_csv).length;\n\nconsole.log('=== RESULTADO FINAL ===');\nconsole.log(`Total de cenários processados: ${totalCenarios}`);\nconsole.log(`Arquivos gerados com sucesso: ${arquivosComSucesso}`);\n\n// Retornar resultado\nreturn [{ \n  json: { \n    sucesso: true, \n    message: `Processamento concluído! ${arquivosComSucesso}/${totalCenarios} arquivos gerados em memória (CSV + XML).`,\n    cenarios_processados: Object.keys(dadosPorCenario),\n    arquivos_gerados: Object.entries(arquivosGerados).reduce((acc, [cenario, info]) => {\n      // Não incluir o conteúdo completo na resposta para economizar memória\n      acc[cenario] = {\n        nome_arquivo_csv: info.nome_arquivo_csv,\n        nome_arquivo_xml: info.nome_arquivo_xml,\n        total_registros: info.total_registros,\n        data_criacao: info.data_criacao,\n        tamanho_csv: info.tamanho_csv,\n        tamanho_xml: info.tamanho_xml,\n        erro: info.erro\n      };\n      return acc;\n    }, {}),\n    total_por_cenario: totalPorCenario,\n    resumo: {\n      total_cenarios: totalCenarios,\n      cenarios_disponiveis: Object.keys(dadosPorCenario),\n      arquivos_disponiveis: Object.keys(arquivosGerados).filter(key => arquivosGerados[key].nome_arquivo_csv),\n      total_por_cenario: totalPorCenario,\n      data_processamento: new Date().toISOString()\n    },\n    relatorios: dadosPorCenario,\n    debug_staticdata: {\n      workflow_disponivel: typeof $workflow !== 'undefined',\n      staticdata_inicializado: !!(typeof $workflow !== 'undefined' && $workflow.staticData),\n      dados_salvos: !!(typeof $workflow !== 'undefined' && $workflow.staticData && $workflow.staticData.relatorios)\n    }\n  }\n}];"
+      },
+      "id": "cc772a92-caa3-4878-b407-17a0ac26f42c",
+      "name": "Gerar XLSX e Salvar",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "path": "relatorios",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "277fa703-67fb-470a-b643-65d6e2d446d0",
+      "name": "Webhook Get Relatórios",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        112
+      ],
+      "webhookId": "f3f947c2-d095-491a-8723-b8fa2de1e719"
+    },
+    {
+      "parameters": {
+        "functionCode": "// SUBSTITUA o código do node \"Responder Relatórios\" por este:\n\nconsole.log('=== INICIANDO RESPONDER RELATÓRIOS ===');\n\nlet relatorios = {};\nlet arquivosConteudo = {};\nlet sucesso = true;\nlet mensagem = 'Dados recuperados com sucesso';\nlet debugInfo = {};\n\ntry {\n  console.log('Verificando $workflow...');\n  \n  if (typeof $workflow !== 'undefined') {\n    console.log('✓ $workflow disponível');\n    \n    if ($workflow.staticData) {\n      console.log('✓ $workflow.staticData disponível');\n      console.log('Chaves no staticData:', Object.keys($workflow.staticData));\n      \n      // Tentar recuperar os dados\n      relatorios = $workflow.staticData.relatorios || {};\n      arquivosConteudo = $workflow.staticData.arquivos_conteudo || {};\n      \n      console.log('Cenários encontrados:', Object.keys(relatorios));\n      console.log('Arquivos encontrados:', Object.keys(arquivosConteudo));\n      \n      // Debug detalhado\n      debugInfo = {\n        staticData_disponivel: true,\n        chaves_staticdata: Object.keys($workflow.staticData),\n        total_cenarios: Object.keys(relatorios).length,\n        total_arquivos: Object.keys(arquivosConteudo).length,\n        ultima_atualizacao: $workflow.staticData.ultimaAtualizacao || 'não definida'\n      };\n      \n      // Se não há dados, mas staticData existe\n      if (Object.keys(relatorios).length === 0 && Object.keys(arquivosConteudo).length === 0) {\n        console.log('⚠ staticData existe, mas está vazio');\n        sucesso = false;\n        mensagem = 'staticData existe, mas não contém dados processados. Execute o upload da planilha primeiro.';\n      }\n      \n    } else {\n      console.log('✗ $workflow.staticData não disponível');\n      debugInfo.staticData_disponivel = false;\n      sucesso = false;\n      mensagem = '$workflow.staticData não está disponível.';\n    }\n  } else {\n    console.log('✗ $workflow não disponível');\n    debugInfo.workflow_disponivel = false;\n    sucesso = false;\n    mensagem = '$workflow não está disponível.';\n  }\n} catch (error) {\n  console.error('Erro ao recuperar dados:', error);\n  debugInfo.erro = error.message;\n  sucesso = false;\n  mensagem = 'Erro ao recuperar dados: ' + error.message;\n}\n\n// Se não há dados reais, criar dados de teste para verificar se o frontend funciona\nif (Object.keys(relatorios).length === 0) {\n  console.log('Criando dados de teste...');\n  \n  relatorios = {\n    \"Top Performers\": [\n      {\n        \"Matrícula\": \"001\",\n        \"Nome Completo\": \"João Silva\",\n        \"Departamento\": \"TI\",\n        \"Cargo\": \"Desenvolvedor\",\n        \"Data de Admissão\": \"2020-01-15\",\n        \"Avaliação Técnica (0-10)\": \"9.5\",\n        \"Avaliação Comportamental (0-10)\": \"8.8\",\n        \"Projetos Concluídos\": \"12\",\n        \"Cursos Obrigatórios\": \"5\",\n        \"Cursos Adicionais\": \"8\",\n        \"Avaliação de softskills\": \"9.0\"\n      }\n    ],\n    \"Crescimento\": [\n      {\n        \"Matrícula\": \"002\",\n        \"Nome Completo\": \"Maria Santos\",\n        \"Departamento\": \"RH\",\n        \"Cargo\": \"Analista\",\n        \"Data de Admissão\": \"2021-03-10\",\n        \"Avaliação Técnica (0-10)\": \"8.0\",\n        \"Avaliação Comportamental (0-10)\": \"9.2\",\n        \"Projetos Concluídos\": \"6\",\n        \"Cursos Obrigatórios\": \"4\",\n        \"Cursos Adicionais\": \"5\",\n        \"Avaliação de softskills\": \"8.5\"\n      }\n    ]\n  };\n  \n  arquivosConteudo = {\n    \"Top Performers\": {\n      nome_arquivo_csv: \"Top_Performers.csv\",\n      nome_arquivo_xml: \"Top_Performers.xml\",\n      total_registros: 1,\n      data_criacao: new Date().toISOString(),\n      tamanho_csv: 200,\n      tamanho_xml: 500\n    },\n    \"Crescimento\": {\n      nome_arquivo_csv: \"Crescimento.csv\", \n      nome_arquivo_xml: \"Crescimento.xml\",\n      total_registros: 1,\n      data_criacao: new Date().toISOString(),\n      tamanho_csv: 180,\n      tamanho_xml: 450\n    }\n  };\n  \n  mensagem = 'Usando dados de teste - Execute o upload da planilha para dados reais.';\n  debugInfo.usando_dados_teste = true;\n}\n\n// Preparar informações dos arquivos para o frontend\nconst arquivosInfo = {};\nObject.entries(arquivosConteudo).forEach(([cenario, info]) => {\n  arquivosInfo[cenario] = {\n    nome_arquivo_csv: info.nome_arquivo_csv,\n    nome_arquivo_xml: info.nome_arquivo_xml,\n    total_registros: info.total_registros || 0,\n    data_criacao: info.data_criacao,\n    tamanho_csv: info.tamanho_csv || 0,\n    tamanho_xml: info.tamanho_xml || 0,\n    erro: info.erro\n  };\n});\n\nconst resumo = {\n  total_cenarios: Object.keys(relatorios).length,\n  cenarios_disponiveis: Object.keys(relatorios),\n  arquivos_disponiveis: Object.keys(arquivosConteudo).filter(key => \n    arquivosConteudo[key] && (arquivosConteudo[key].nome_arquivo_csv || arquivosConteudo[key].nome_arquivo_xml)\n  ),\n  total_por_cenario: Object.entries(relatorios).reduce((acc, [nome, dados]) => {\n    acc[nome] = Array.isArray(dados) ? dados.length : 0;\n    return acc;\n  }, {}),\n  data_processamento: new Date().toISOString()\n};\n\nconsole.log('=== RESPOSTA FINAL ===');\nconsole.log('Sucesso:', sucesso);\nconsole.log('Mensagem:', mensagem);\nconsole.log('Total de cenários:', Object.keys(relatorios).length);\nconsole.log('Total de arquivos:', Object.keys(arquivosInfo).length);\n\n// Retorno com dados de debug detalhados\nreturn [{ \n  json: { \n    relatorios: relatorios,\n    arquivos_xlsx: arquivosInfo,\n    resumo: resumo,\n    sucesso: sucesso,\n    mensagem: mensagem,\n    timestamp: new Date().toISOString(),\n    debug: debugInfo\n  }\n}];"
+      },
+      "id": "c2fbf294-2fab-4a19-8560-888e3a646f77",
+      "name": "Responder Relatórios",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "path": "download/{{$parameter[\"filename\"]}}",
+        "options": {}
+      },
+      "id": "35daa992-22ac-4fa8-ad37-c481e4c81360",
+      "name": "Webhook Download XLSX",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        304
+      ],
+      "webhookId": "download-xlsx-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Código para o node \"Servir Arquivo XLSX\" - Versão que serve da memória\n\n// Obter nome do arquivo da URL\nconst urlPath = $node[\"Webhook Download XLSX\"].parameter.path || '';\nconst filename = urlPath.replace('download/', '');\n\nif (!filename) {\n  return [{ \n    json: { error: 'Nome do arquivo não fornecido' }, \n    statusCode: 400,\n    headers: {\n      'Content-Type': 'application/json',\n      'Access-Control-Allow-Origin': '*'\n    }\n  }];\n}\n\n// Determinar o tipo de arquivo pela extensão\nconst ext = filename.split('.').pop().toLowerCase();\nlet contentType;\n\nswitch (ext) {\n  case 'xlsx':\n    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';\n    break;\n  case 'csv':\n    contentType = 'text/csv';\n    break;\n  case 'xml':\n    contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';\n    break;\n  default:\n    contentType = 'application/octet-stream';\n}\n\ntry {\n  // Recuperar dados do staticData\n  let arquivosConteudo = {};\n  \n  if (typeof $workflow !== 'undefined' && $workflow.staticData && $workflow.staticData.arquivos_conteudo) {\n    arquivosConteudo = $workflow.staticData.arquivos_conteudo;\n    console.log('Dados carregados de $workflow.staticData');\n  } else {\n    console.log('Nenhum dado encontrado no staticData');\n    return [{ \n      json: { \n        error: 'Nenhum arquivo encontrado. Execute o processamento da planilha primeiro.',\n        arquivo_solicitado: filename\n      }, \n      statusCode: 404,\n      headers: {\n        'Content-Type': 'application/json',\n        'Access-Control-Allow-Origin': '*'\n      }\n    }];\n  }\n\n  // Procurar o arquivo nos dados armazenados\n  let conteudoArquivo = null;\n  let cenarioEncontrado = null;\n\n  for (const [cenario, info] of Object.entries(arquivosConteudo)) {\n    if (info.nome_arquivo_csv === filename && info.conteudo_csv) {\n      conteudoArquivo = info.conteudo_csv;\n      cenarioEncontrado = cenario;\n      break;\n    }\n    if (info.nome_arquivo_xml === filename && info.conteudo_xml) {\n      conteudoArquivo = info.conteudo_xml;\n      cenarioEncontrado = cenario;\n      break;\n    }\n  }\n\n  if (!conteudoArquivo) {\n    console.log(`Arquivo não encontrado: ${filename}`);\n    \n    // Listar arquivos disponíveis para debug\n    const arquivosDisponiveis = [];\n    Object.entries(arquivosConteudo).forEach(([cenario, info]) => {\n      if (info.nome_arquivo_csv) arquivosDisponiveis.push(info.nome_arquivo_csv);\n      if (info.nome_arquivo_xml) arquivosDisponiveis.push(info.nome_arquivo_xml);\n    });\n    \n    console.log('Arquivos disponíveis:', arquivosDisponiveis);\n    \n    return [{ \n      json: { \n        error: 'Arquivo não encontrado',\n        arquivo_solicitado: filename,\n        arquivos_disponiveis: arquivosDisponiveis\n      }, \n      statusCode: 404,\n      headers: {\n        'Content-Type': 'application/json',\n        'Access-Control-Allow-Origin': '*'\n      }\n    }];\n  }\n\n  console.log(`Servindo arquivo: ${filename} do cenário: ${cenarioEncontrado}`);\n\n  // Retornar o conteúdo do arquivo\n  return [{ \n    json: {\n      success: true,\n      filename: filename,\n      contentType: contentType,\n      size: conteudoArquivo.length,\n      cenario: cenarioEncontrado\n    },\n    headers: {\n      'Content-Type': contentType,\n      'Content-Disposition': `attachment; filename=\"${filename}\"`,\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Expose-Headers': 'Content-Disposition'\n    },\n    body: conteudoArquivo\n  }];\n  \n} catch (error) {\n  console.error('Erro ao recuperar arquivo:', error.message);\n  return [{ \n    json: { \n      error: 'Erro ao recuperar arquivo: ' + error.message,\n      filename: filename\n    }, \n    statusCode: 500,\n    headers: {\n      'Content-Type': 'application/json',\n      'Access-Control-Allow-Origin': '*'\n    }\n  }];\n}"
+      },
+      "id": "2f8b7205-dfe6-4815-a516-6c21a14490b4",
+      "name": "Servir Arquivo XLSX",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "name": "Access-Control-Allow-Methods",
+              "value": "GET, POST, OPTIONS"
+            },
+            {
+              "name": "Access-Control-Allow-Headers",
+              "value": "Content-Type"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6a39ea40-1343-40e0-8304-de08ad554c99",
+      "name": "Set CORS Headers",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "Content-Type",
+              "value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            },
+            {
+              "name": "Content-Disposition",
+              "value": "attachment; filename=\"{{$json.filename}}\""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2e9a1fd-94ad-4217-9df5-4fbfaf35adfd",
+      "name": "Set Download Headers",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "options": {}
+      },
+      "id": "df12df56-770f-4564-bb84-801f027075b9",
+      "name": "Respond to Webhook JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        176,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "options": {}
+      },
+      "id": "b0df3e50-d032-4e60-b2ee-5fc65586a03a",
+      "name": "Respond XLSX Download",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        176,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ADICIONE ESTE NODE TEMPORÁRIO antes do \"Responder Relatórios\" para debug:\n\nconsole.log('=== DEBUG STATICDATA ===');\n\n// Verificar se $workflow existe\nconsole.log('$workflow existe:', typeof $workflow !== 'undefined');\n\nif (typeof $workflow !== 'undefined') {\n  console.log('$workflow.staticData existe:', !!$workflow.staticData);\n  \n  if ($workflow.staticData) {\n    console.log('Chaves em staticData:', Object.keys($workflow.staticData));\n    console.log('relatorios existe:', !!$workflow.staticData.relatorios);\n    console.log('arquivos_conteudo existe:', !!$workflow.staticData.arquivos_conteudo);\n    \n    if ($workflow.staticData.relatorios) {\n      console.log('Cenários em relatorios:', Object.keys($workflow.staticData.relatorios));\n    }\n    \n    if ($workflow.staticData.arquivos_conteudo) {\n      console.log('Arquivos em arquivos_conteudo:', Object.keys($workflow.staticData.arquivos_conteudo));\n    }\n    \n    // Mostrar todo o conteúdo do staticData (cuidado com tamanho)\n    console.log('Conteúdo completo do staticData:', JSON.stringify($workflow.staticData, null, 2));\n  }\n} else {\n  console.log('$workflow não está disponível');\n}\n\n// Verificar dados recebidos do webhook\nconsole.log('Dados recebidos do webhook:', JSON.stringify(items, null, 2));\n\n// Passar os dados adiante\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        112
+      ],
+      "id": "097088b1-7819-42d2-ae73-e211ced12acf",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Upload Planilha": {
+      "main": [
+        [
+          {
+            "node": "Extract CSV Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract CSV Data": {
+      "main": [
+        [
+          {
+            "node": "Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "Cenário Top Performers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cenário Crescimento",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cenário Veteranos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cenário Liderança",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cenário Inovação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cenário Top Performers": {
+      "main": [
+        [
+          {
+            "node": "Merge Cenários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cenário Crescimento": {
+      "main": [
+        [
+          {
+            "node": "Merge Cenários",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cenário Veteranos": {
+      "main": [
+        [
+          {
+            "node": "Merge Cenários",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Cenário Liderança": {
+      "main": [
+        [
+          {
+            "node": "Merge Cenários",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Cenário Inovação": {
+      "main": [
+        [
+          {
+            "node": "Merge Cenários",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge Cenários": {
+      "main": [
+        [
+          {
+            "node": "Gerar XLSX e Salvar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Get Relatórios": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder Relatórios": {
+      "main": [
+        [
+          {
+            "node": "Set CORS Headers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Download XLSX": {
+      "main": [
+        [
+          {
+            "node": "Servir Arquivo XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Servir Arquivo XLSX": {
+      "main": [
+        [
+          {
+            "node": "Set Download Headers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set CORS Headers": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Download Headers": {
+      "main": [
+        [
+          {
+            "node": "Respond XLSX Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Responder Relatórios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4b7c4133-ca8d-467a-b4e9-4fdf47edefe5",
+  "meta": {
+    "instanceId": "beebb243f78c8996273a61ab338011d48bea62ed71bfbb81c3a3a7ae037d4113"
+  },
+  "id": "BvHeSNYiVpBEhUt0",
+  "tags": []
+}
