@@ -22,6 +22,52 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    .download-link {
+      margin-left: 10px;
+      color: #28a745;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 8px 12px;
+      background-color: #28a745;
+      color: white;
+      border-radius: 5px;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .download-link:hover {
+      background-color: #218838;
+    }
+    .cenario-grupo {
+      margin: 15px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    .cenario-titulo {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .loading {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    .error {
+      color: #dc3545;
+      background-color: #f8d7da;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    .success {
+      color: #155724;
+      background-color: #d4edda;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -31,9 +77,12 @@
   </header>
   <div class="container">
     <h2>Relatório da Análise</h2>
+    <div id="status-container">
+      <div class="loading">Carregando relatórios...</div>
+    </div>
     <div class="botoes-relatorios" id="botoesRelatorios"></div>
 
-    <div class="filtro-container">
+    <div class="filtro-container" id="filtroContainer" style="display: none;">
       <h3>Filtros</h3>
       <input type="text" id="filtroMatricula" class="filtro" placeholder="Filtrar por Matrícula">
       <input type="text" id="filtroNome" class="filtro" placeholder="Filtrar por Nome Completo">
@@ -48,7 +97,7 @@
       <input type="text" id="filtroSoftskills" class="filtro" placeholder="Filtrar por Avaliação de Softskills">
     </div>
 
-    <table id="tabela-dados">
+    <table id="tabela-dados" style="display: none;">
       <thead id="cabecalho-tabela"></thead>
       <tbody id="corpo-tabela"></tbody>
     </table>
@@ -62,6 +111,8 @@
     const cabecalhoTabela = document.getElementById("cabecalho-tabela");
     const corpoTabela = document.getElementById("corpo-tabela");
     const botoesRelatorios = document.getElementById("botoesRelatorios");
+    const statusContainer = document.getElementById("status-container");
+    const filtroContainer = document.getElementById("filtroContainer");
 
     const filtros = {
       "Matrícula": document.getElementById("filtroMatricula"),
@@ -77,13 +128,17 @@
       "Avaliação de softskills": document.getElementById("filtroSoftskills")
     };
 
+    let dadosAtuais = [];
+
     function renderizarTabela(dados) {
       cabecalhoTabela.innerHTML = "";
       corpoTabela.innerHTML = "";
+      
       if (dados.length === 0) {
         corpoTabela.innerHTML = "<tr><td colspan='100%'>Nenhum dado encontrado.</td></tr>";
         return;
       }
+
       const headers = Object.keys(dados[0]);
       const trHead = document.createElement("tr");
       headers.forEach(header => {
@@ -104,45 +159,125 @@
       });
     }
 
-    function aplicarFiltros(dados) {
-      const filtrados = dados.filter(item => {
+    function aplicarFiltros() {
+      const filtrados = dadosAtuais.filter(item => {
         return Object.keys(filtros).every(campo => {
           const input = filtros[campo].value.toLowerCase();
-          return item[campo]?.toString().toLowerCase().includes(input);
+          return !input || item[campo]?.toString().toLowerCase().includes(input);
         });
       });
       renderizarTabela(filtrados);
     }
 
-    function prepararTabela(dados) {
+    function prepararTabela(dados, nomeCenario) {
+      dadosAtuais = dados;
+      
+      // Limpar filtros
       Object.values(filtros).forEach(input => {
+        input.value = '';
         input.removeEventListener("input", aplicarFiltros);
-        input.addEventListener("input", () => aplicarFiltros(dados));
+        input.addEventListener("input", aplicarFiltros);
       });
+
+      // Mostrar elementos da tabela
+      tabela.style.display = 'table';
+      filtroContainer.style.display = 'block';
+      
+      // Atualizar título
+      const titulo = document.querySelector('h2');
+      titulo.textContent = `Relatório da Análise - ${nomeCenario}`;
+      
       renderizarTabela(dados);
     }
 
+    function downloadArquivo(nomeArquivo, formato = 'csv') {
+      const url = `https://tccgp1.app.n8n.cloud/webhook/download/${nomeArquivo}.${formato}`;
+      
+      // Criar link temporário e fazer download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${nomeArquivo}.${formato}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function criarGrupoCenario(cenario, dados, arquivos) {
+      const grupo = document.createElement('div');
+      grupo.className = 'cenario-grupo';
+      
+      const titulo = document.createElement('div');
+      titulo.className = 'cenario-titulo';
+      titulo.textContent = `${cenario} (${dados.length} registros)`;
+      grupo.appendChild(titulo);
+      
+      // Botão para visualizar
+      const btnVisualizar = document.createElement('button');
+      btnVisualizar.textContent = `Visualizar ${cenario}`;
+      btnVisualizar.onclick = () => prepararTabela(dados, cenario);
+      grupo.appendChild(btnVisualizar);
+      
+      // Links para download
+      if (arquivos && arquivos.nome_arquivo_csv) {
+        const linkCSV = document.createElement('a');
+        linkCSV.href = '#';
+        linkCSV.className = 'download-link';
+        linkCSV.textContent = 'Download CSV';
+        linkCSV.onclick = (e) => {
+          e.preventDefault();
+          downloadArquivo(arquivos.nome_arquivo_csv.replace('.csv', ''), 'csv');
+        };
+        grupo.appendChild(linkCSV);
+      }
+      
+      if (arquivos && arquivos.nome_arquivo_xml) {
+        const linkXML = document.createElement('a');
+        linkXML.href = '#';
+        linkXML.className = 'download-link';
+        linkXML.textContent = 'Download Excel (XML)';
+        linkXML.onclick = (e) => {
+          e.preventDefault();
+          downloadArquivo(arquivos.nome_arquivo_xml.replace('.xml', ''), 'xml');
+        };
+        grupo.appendChild(linkXML);
+      }
+      
+      return grupo;
+    }
+
+    // Carregar dados
     fetch("https://tccgp1.app.n8n.cloud/webhook/relatorios")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then(data => {
+        statusContainer.innerHTML = '';
+        
         const relatorios = data.relatorios || {};
+        const arquivos = data.arquivos_xlsx || {};
         let dadosPresentes = false;
+
         for (const cenario in relatorios) {
           const dados = relatorios[cenario];
           if (Array.isArray(dados) && dados.length > 0) {
             dadosPresentes = true;
-            const btn = document.createElement("button");
-            btn.textContent = `Visualizar: ${cenario}`;
-            btn.onclick = () => prepararTabela(dados);
-            botoesRelatorios.appendChild(btn);
+            const grupo = criarGrupoCenario(cenario, dados, arquivos[cenario]);
+            botoesRelatorios.appendChild(grupo);
           }
         }
+
         if (!dadosPresentes) {
-          botoesRelatorios.innerHTML = "Nenhum cenário retornou dados.";
+          statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
+        } else {
+          statusContainer.innerHTML = '<div class="success">Relatórios carregados com sucesso!</div>';
         }
       })
-      .catch(() => {
-        botoesRelatorios.innerHTML = "Erro ao carregar os relatórios.";
+      .catch(error => {
+        console.error('Erro ao carregar relatórios:', error);
+        statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
       });
   </script>
 </body>
