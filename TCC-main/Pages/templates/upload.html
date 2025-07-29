@@ -81,7 +81,7 @@
         formData.append('file', arquivoSelecionado);
         formData.append('area', document.getElementById("areaSelect").value);
 
-        const resposta = await fetch('https://tccgp1.app.n8n.cloud/webhook/upload-planilha', {
+        const resposta = await fetch('https://tccsis.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
           body: formData
         });
