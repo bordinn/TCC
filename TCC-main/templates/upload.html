@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FYT – Upload</title>
-  <link rel="stylesheet" href="../static/styles.css" />
-  <link rel="icon" href="../static/icons/732220.png" type="image/png">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/732220.png') }}">
 </head>
 <body>
   <header>
@@ -93,7 +93,7 @@
         mensagem.style.color = 'green';
         mensagem.textContent = "Arquivo enviado com sucesso! Redirecionando...";
         setTimeout(() => {
-          window.location.href = "dados.html";
+          window.location.href = "dados";
         }, 4000);
 
       } catch (erro) {
