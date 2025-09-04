@@ -384,7 +384,7 @@
     const bonificacoesContainer = document.getElementById("bonificacoesContainer");
 
     const filtros = {
-      "Posicao": document.getElementById("filtroPosicao"),
+      "Posição": document.getElementById("filtroPosicao"),
       "Score": document.getElementById("filtroScore"),
       "Matrícula": document.getElementById("filtroMatricula"),
       "Nome Completo": document.getElementById("filtroNome"),
@@ -407,6 +407,32 @@
     }
 
     let dadosAtuais = [];
+
+    function processarDados(dados) {
+      // Processar os dados para remover score_ranking e renomear campos
+      return dados.map(item => {
+        const itemProcessado = { ...item };
+        
+        // Remover score_ranking
+        if (itemProcessado.hasOwnProperty('score_ranking')) {
+          delete itemProcessado.score_ranking;
+        }
+        
+        // Renomear posicao_no_ranking para Posição
+        if (itemProcessado.hasOwnProperty('posicao_no_ranking')) {
+          itemProcessado['Posição'] = itemProcessado.posicao_no_ranking;
+          delete itemProcessado.posicao_no_ranking;
+        }
+        
+        // Renomear score_formatado para Score
+        if (itemProcessado.hasOwnProperty('score_formatado')) {
+          itemProcessado['Score'] = itemProcessado.score_formatado;
+          delete itemProcessado.score_formatado;
+        }
+        
+        return itemProcessado;
+      });
+    }
 
     function renderizarTabela(dados) {
       cabecalhoTabela.innerHTML = "";
@@ -456,7 +482,9 @@
     function prepararTabela(dados, nomeCenario) {
       ocultarTodosConteudos();
       
-      dadosAtuais = dados;
+      // Processar dados antes de atribuir a dadosAtuais
+      dadosAtuais = processarDados(dados);
+      
       Object.values(filtros).forEach(input => {
         input.value = '';
         input.removeEventListener("input", aplicarFiltros);
@@ -469,7 +497,7 @@
       const titulo = document.querySelector('h2');
       titulo.textContent = `Relatório da Análise – ${nomeCenario}`;
 
-      renderizarTabela(dados);
+      renderizarTabela(dadosAtuais);
     }
 
     function mostrarBonificacoes(bonificacoes, nomeCenario) {
