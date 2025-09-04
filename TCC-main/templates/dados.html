@@ -242,7 +242,7 @@
               <div class="medalha">${medalha}</div>
               <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
               <div class="funcionario-info">
-                Score: ${bonus.score_final || '0.00'}<br>
+                Score: ${bonus.score_formatado || bonus.score || '0.00'}<br>
                 ${bonus.departamento || 'Departamento não informado'}
               </div>
               <div class="bonificacao-opcoes">
