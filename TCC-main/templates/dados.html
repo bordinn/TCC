@@ -325,25 +325,6 @@
       <div class="loading">Carregando relatórios...</div>
     </div>
 
-    <!-- Resumo das Bonificações -->
-    <div id="resumoBonificacoes" class="resumo-bonificacoes" style="display: none;">
-      <h3>📊 Resumo do Sistema de Bonificações</h3>
-      <div class="resumo-stats">
-        <div class="stat-item">
-          <div class="stat-number" id="totalBonificacoes">0</div>
-          <div class="stat-label">Bonificações</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number" id="totalFuncionarios">0</div>
-          <div class="stat-label">Funcionários</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number" id="investimentoEstimado">R$ 0</div>
-          <div class="stat-label">Investimento Est.</div>
-        </div>
-      </div>
-    </div>
-
     <div class="botoes-relatorios" id="botoesRelatorios"></div>
 
     <!-- Container para mostrar bonificações -->
@@ -384,7 +365,6 @@
     const statusContainer = document.getElementById("status-container");
     const filtroContainer = document.getElementById("filtroContainer");
     const bonificacoesContainer = document.getElementById("bonificacoesContainer");
-    const resumoBonificacoes = document.getElementById("resumoBonificacoes");
 
     const filtros = {
       "Matrícula": document.getElementById("filtroMatricula"),
@@ -557,22 +537,7 @@
       grupo.appendChild(botoes);
 
       return grupo;
-    }
-
-    function atualizarResumo(data) {
-      const resumo = data.resumo || {};
-      const totalBonificacoes = resumo.total_bonificacoes_geradas || 0;
-      const totalFuncionarios = Object.values(resumo.total_por_cenario || {}).reduce((a, b) => a + b, 0);
-      const investimentoEstimado = totalBonificacoes * 25000; // R$ 25k média por bonificação
-
-      document.getElementById('totalBonificacoes').textContent = totalBonificacoes;
-      document.getElementById('totalFuncionarios').textContent = totalFuncionarios;
-      document.getElementById('investimentoEstimado').textContent = `R$ ${investimentoEstimado.toLocaleString('pt-BR')}`;
-
-      if (totalBonificacoes > 0) {
-        resumoBonificacoes.style.display = 'block';
       }
-    }
 
     fetch("https://tccgrupo1.app.n8n.cloud/webhook/relatorios")
       .then(res => {
@@ -588,9 +553,6 @@
         const relatorios = data.relatorios || {};
         const bonificacoes = data.bonificacoes || {};
         let dadosPresentes = false;
-
-        // Atualizar resumo
-        atualizarResumo(data);
 
         for (const cenario in relatorios) {
           const dados = relatorios[cenario];
