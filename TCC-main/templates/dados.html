@@ -595,7 +595,7 @@
 
       const btnDashboard = document.createElement('button');
       btnDashboard.textContent = `Ver Dashboard`;
-      btnDashboard.onclick = () => mostrarDashboard(dadosCompletos.relatorios, dadosCompletos.bonificacoes);
+      btnDashboard.onclick = () => mostrarDashboard(cenario, dados, bonificacoes);
 
 botoes.appendChild(btnDashboard);
 
@@ -648,19 +648,18 @@ botoes.appendChild(btnDashboard);
       const dashboardContainer = document.getElementById("dashboardContainer");
 const dashboardResumo = document.getElementById("dashboardResumo");
 
-function mostrarDashboard(relatorios, bonificacoes) {
+function mostrarDashboard(nomeCenario, dados, bonificacoes) {
   ocultarTodosConteudos();
   dashboardContainer.style.display = "block";
 
   // ======== RESUMO =========
-  const totalCenarios = Object.keys(relatorios).length;
-  const totalFuncionarios = Object.values(relatorios).reduce((acc, arr) => acc + arr.length, 0);
-  const totalBonificacoes = Object.values(bonificacoes).reduce((acc, arr) => acc + arr.length, 0);
+  const totalFuncionarios = dados.length;
+  const totalBonificacoes = bonificacoes.length;
 
   dashboardResumo.innerHTML = `
     <div class="stat-item">
-      <div class="stat-number">${totalCenarios}</div>
-      <div class="stat-label">Cenários</div>
+      <div class="stat-number">${nomeCenario}</div>
+      <div class="stat-label">Cenário</div>
     </div>
     <div class="stat-item">
       <div class="stat-number">${totalFuncionarios}</div>
@@ -672,17 +671,20 @@ function mostrarDashboard(relatorios, bonificacoes) {
     </div>
   `;
 
-  // ======== FUNCIONÁRIOS POR CENÁRIO =========
-  const funcionariosLabels = Object.keys(relatorios);
-  const funcionariosData = Object.values(relatorios).map(arr => arr.length);
+  // ======== FUNCIONÁRIOS POR DEPARTAMENTO =========
+  const depCounts = {};
+  dados.forEach(f => {
+    const dep = f["Departamento"] || "Não informado";
+    depCounts[dep] = (depCounts[dep] || 0) + 1;
+  });
 
   new Chart(document.getElementById("chartFuncionarios"), {
     type: "bar",
     data: {
-      labels: funcionariosLabels,
+      labels: Object.keys(depCounts),
       datasets: [{
-        label: "Funcionários por Cenário",
-        data: funcionariosData,
+        label: "Funcionários por Departamento",
+        data: Object.values(depCounts),
         backgroundColor: "#e07b3c"
       }]
     },
@@ -691,13 +693,10 @@ function mostrarDashboard(relatorios, bonificacoes) {
 
   // ======== TIPOS DE BONIFICAÇÕES =========
   let contagemBonificacoes = { Item: 0, Viagem: 0, Bônus: 0 };
-
-  Object.values(bonificacoes).forEach(lista => {
-    lista.forEach(b => {
-      if (b.opcao_item) contagemBonificacoes.Item++;
-      if (b.opcao_viagem) contagemBonificacoes.Viagem++;
-      if (b.opcao_bonus_salarial) contagemBonificacoes.Bônus++;
-    });
+  bonificacoes.forEach(b => {
+    if (b.opcao_item) contagemBonificacoes.Item++;
+    if (b.opcao_viagem) contagemBonificacoes.Viagem++;
+    if (b.opcao_bonus_salarial) contagemBonificacoes.Bônus++;
   });
 
   new Chart(document.getElementById("chartBonificacoes"), {
@@ -711,27 +710,24 @@ function mostrarDashboard(relatorios, bonificacoes) {
     }
   });
 
-  // ======== SCORE MÉDIO POR CENÁRIO =========
-  const scoreMedioLabels = Object.keys(relatorios);
-  const scoreMedioData = Object.values(relatorios).map(arr => {
-    if (!arr.length) return 0;
-    const total = arr.reduce((acc, f) => acc + (parseFloat(f.Score) || 0), 0);
-    return (total / arr.length).toFixed(2);
-  });
+  // ======== DISTRIBUIÇÃO DE SCORES =========
+  const scores = dados.map(f => parseFloat(f["Score"]) || 0);
 
   new Chart(document.getElementById("chartScore"), {
-    type: "radar",
+    type: "line",
     data: {
-      labels: scoreMedioLabels,
+      labels: scores.map((_, i) => `Func ${i+1}`),
       datasets: [{
-        label: "Score Médio",
-        data: scoreMedioData,
+        label: "Scores dos Funcionários",
+        data: scores,
+        fill: true,
         backgroundColor: "rgba(224,123,60,0.2)",
         borderColor: "#e07b3c"
       }]
     }
   });
 }
+
 
   </script>
 </body>
