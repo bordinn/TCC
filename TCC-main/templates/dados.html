@@ -8,48 +8,325 @@
   <link rel="icon" href="{{ url_for('static', filename='icons/732220.png') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* ===== SEU CSS ORIGINAL (mantido) ===== */
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f8f9fa; }
-    header { background-color: #e07b3c; color: white; padding: 15px 20px; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; }
-    .container { padding: 20px; }
-    h2 { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-    th, td { padding: 10px 12px; border-bottom: 1px solid #ddd; text-align: left; }
-    th { background-color: #f1f1f1; font-weight: 600; color: #333; }
-    th:nth-child(1), td:nth-child(1) { background-color: #e8f4f8; font-weight: bold; text-align: center; color: #2563eb; }
-    th:nth-child(2), td:nth-child(2) { background-color: #f0f9ff; font-weight: bold; text-align: center; color: #1d4ed8; }
-    tr:hover { background-color: #f9f9f9; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f8f9fa;
+    }
 
-    /* CENÁRIOS E BOTÕES */
-    .cenario-grupo { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
-    .cenario-titulo { font-weight: 600; font-size: 16px; color: #333; }
-    .cenario-grupo button { padding: 8px 14px; background-color: #e07b3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; margin-left: 8px; }
-    .cenario-grupo button:hover { background-color: #cf6a2b; }
-    .btn-bonificacoes { background-color: #28a745 !important; }
-    .btn-bonificacoes:hover { background-color: #218838 !important; }
+    header {
+      background-color: #e07b3c;
+      color: white;
+      padding: 15px 20px;
+      font-size: 18px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
 
-    /* BONIFICAÇÕES (mantido) */
-    .bonificacoes-container, #dashboardContainer { background-color: #fff; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
-    .podium-container { display: flex; justify-content: space-around; gap: 20px; margin-top: 20px; }
-    .posicao-card { flex: 1; background: linear-gradient(145deg, #ffffff, #f0f0f0); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 4px solid; }
+    .container {
+      padding: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f1f1f1;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Destacar as colunas Posicao e Score */
+    th:nth-child(1), td:nth-child(1) { /* Posicao */
+      background-color: #e8f4f8;
+      font-weight: bold;
+      text-align: center;
+      color: #2563eb;
+    }
+
+    th:nth-child(2), td:nth-child(2) { /* Score */
+      background-color: #f0f9ff;
+      font-weight: bold;
+      text-align: center;
+      color: #1d4ed8;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .filtro-container {
+      margin: 30px 0 20px 0;
+      background-color: #ffffff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.03);
+    }
+
+    .filtro-container h3 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .filtros-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .filtro-box {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .filtro-box button {
+      padding: 10px 14px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .filtro-box button:hover {
+      background-color: #e6e6e6;
+    }
+
+    .filtro-input {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .cenario-grupo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fff;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .cenario-titulo {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+    }
+
+    .cenario-grupo button {
+      padding: 8px 14px;
+      background-color: #e07b3c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+      margin-left: 8px;
+    }
+
+    .cenario-grupo button:hover {
+      background-color: #cf6a2b;
+    }
+
+    /* NOVOS ESTILOS PARA BONIFICAÇÕES */
+    .cenario-botoes {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-bonificacoes {
+      background-color: #28a745 !important;
+    }
+
+    .btn-bonificacoes:hover {
+      background-color: #218838 !important;
+    }
+
+    .bonificacoes-container {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+    }
+
+    .podium-container {
+      display: flex;
+      justify-content: space-around;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .posicao-card {
+      flex: 1;
+      background: linear-gradient(145deg, #ffffff, #f0f0f0);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border-top: 4px solid;
+    }
+
     .posicao-card.primeiro { border-top-color: #ffd700; }
     .posicao-card.segundo { border-top-color: #c0c0c0; }
     .posicao-card.terceiro { border-top-color: #cd7f32; }
-    .medalha { font-size: 2.5em; margin-bottom: 10px; }
-    .funcionario-nome { font-weight: bold; font-size: 1.1em; color: #333; margin-bottom: 8px; }
-    .funcionario-info { color: #666; font-size: 0.9em; margin-bottom: 15px; }
-    .bonificacao-opcoes { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; }
-    .bonificacao-opcoes h4 { margin: 0 0 12px 0; color: #333; font-size: 0.95em; }
-    .opcao-linha { margin-bottom: 8px; font-size: 0.85em; line-height: 1.4; }
-    .opcao-tipo { font-weight: 600; color: #e07b3c; }
-    .justificativa { background-color: #e8f5e8; border-left: 4px solid #28a745; padding: 10px; margin-top: 12px; font-style: italic; font-size: 0.85em; border-radius: 0 6px 6px 0; }
 
-    /* DASHBOARD */
-    .resumo-bonificacoes { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
-    .resumo-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-top: 15px; }
-    .stat-item { background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; }
-    .stat-number { font-size: 1.8em; font-weight: bold; margin-bottom: 5px; }
-    .stat-label { font-size: 0.9em; opacity: 0.9; }
+    .medalha {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .funcionario-nome {
+      font-weight: bold;
+      font-size: 1.1em;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .funcionario-info {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 15px;
+    }
+
+    .bonificacao-opcoes {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      text-align: left;
+    }
+
+    .bonificacao-opcoes h4 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-size: 0.95em;
+    }
+
+    .opcao-linha {
+      margin-bottom: 8px;
+      font-size: 0.85em;
+      line-height: 1.4;
+    }
+
+    .opcao-tipo {
+      font-weight: 600;
+      color: #e07b3c;
+    }
+
+    .justificativa {
+      background-color: #e8f5e8;
+      border-left: 4px solid #28a745;
+      padding: 10px;
+      margin-top: 12px;
+      font-style: italic;
+      font-size: 0.85em;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .loading {
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .error {
+      color: #dc2626;
+      background-color: #fee2e2;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .success {
+      color: #15803d;
+      background-color: #d1fae5;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+
+    .voltar-botao {
+      background-color: #e07b3c;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+    }
+
+    .resumo-bonificacoes {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .resumo-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .stat-item {
+      background: rgba(255,255,255,0.2);
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .stat-number {
+      font-size: 1.8em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .podium-container {
+        flex-direction: column;
+      }
+      
+      .cenario-botoes {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -66,16 +343,43 @@
 
     <div class="botoes-relatorios" id="botoesRelatorios"></div>
 
-    <!-- Containers -->
+    <!-- Container para mostrar bonificações -->
     <div id="bonificacoesContainer" class="bonificacoes-container"></div>
-    <div id="dashboardContainer"></div>
 
-    <!-- Filtros originais mantidos -->
+    <!-- DASHBOARD -->
+<div id="dashboardContainer" style="display:none; margin-top:20px;">
+  <h2>📊 Dashboard Analítica</h2>
+
+  <div class="resumo-bonificacoes">
+    <div class="resumo-stats" id="dashboardResumo"></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px;">
+    <div><canvas id="chartFuncionarios"></canvas></div>
+    <div><canvas id="chartBonificacoes"></canvas></div>
+    <div><canvas id="chartScore"></canvas></div>
+  </div>
+</div>
+
     <div class="filtro-container" id="filtroContainer" style="display: none;">
-      <!-- ... todos os filtros que você tinha antes ... -->
+      <h3>Filtros</h3>
+      <div class="filtros-grid">
+        <div class="filtro-box"><button onclick="toggleInput('filtroPosicao')">🏆 Posição</button><input type="text" id="filtroPosicao" class="filtro-input" placeholder="Digite a posição..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroScore')">📊 Score</button><input type="text" id="filtroScore" class="filtro-input" placeholder="Digite o score..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroMatricula')">🔍 Matrícula</button><input type="text" id="filtroMatricula" class="filtro-input" placeholder="Digite a matrícula..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroNome')">🔍 Nome</button><input type="text" id="filtroNome" class="filtro-input" placeholder="Digite o nome..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroDepartamento')">🏢 Departamento</button><input type="text" id="filtroDepartamento" class="filtro-input" placeholder="Digite o departamento..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroCargo')">💼 Cargo</button><input type="text" id="filtroCargo" class="filtro-input" placeholder="Digite o cargo..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroAdmissao')">📅 Admissão</button><input type="text" id="filtroAdmissao" class="filtro-input" placeholder="Digite a data..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroTecnica')">⚙️ Técnica</button><input type="text" id="filtroTecnica" class="filtro-input" placeholder="Nota técnica..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroComportamental')">🤝 Comportamental</button><input type="text" id="filtroComportamental" class="filtro-input" placeholder="Nota comportamental..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroProjetos')">📊 Projetos</button><input type="text" id="filtroProjetos" class="filtro-input" placeholder="Qtde. projetos..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroObrigatorios')">📚 Obrigatórios</button><input type="text" id="filtroObrigatorios" class="filtro-input" placeholder="Cursos obrigatórios..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroAdicionais')">📝 Adicionais</button><input type="text" id="filtroAdicionais" class="filtro-input" placeholder="Cursos adicionais..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroSoftskills')">🎯 Softskills</button><input type="text" id="filtroSoftskills" class="filtro-input" placeholder="Nota softskills..."></div>
+      </div>
     </div>
 
-    <!-- Tabela -->
     <table id="tabela-dados" style="display: none;">
       <thead id="cabecalho-tabela"></thead>
       <tbody id="corpo-tabela"></tbody>
@@ -92,27 +396,69 @@
     const corpoTabela = document.getElementById("corpo-tabela");
     const botoesRelatorios = document.getElementById("botoesRelatorios");
     const statusContainer = document.getElementById("status-container");
-    const bonificacoesContainer = document.getElementById("bonificacoesContainer");
-    const dashboardContainer = document.getElementById("dashboardContainer");
     const filtroContainer = document.getElementById("filtroContainer");
+    const bonificacoesContainer = document.getElementById("bonificacoesContainer");
+
+    const filtros = {
+      "Posição": document.getElementById("filtroPosicao"),
+      "Score": document.getElementById("filtroScore"),
+      "Matrícula": document.getElementById("filtroMatricula"),
+      "Nome Completo": document.getElementById("filtroNome"),
+      "Departamento": document.getElementById("filtroDepartamento"),
+      "Cargo": document.getElementById("filtroCargo"),
+      "Data de Admissão": document.getElementById("filtroAdmissao"),
+      "Avaliação Técnica (0-10)": document.getElementById("filtroTecnica"),
+      "Avaliação Comportamental (0-10)": document.getElementById("filtroComportamental"),
+      "Projetos Concluídos": document.getElementById("filtroProjetos"),
+      "Cursos Obrigatórios": document.getElementById("filtroObrigatorios"),
+      "Cursos Adicionais": document.getElementById("filtroAdicionais"),
+      "Avaliação de softskills": document.getElementById("filtroSoftskills")
+    };
 
     let dadosCompletos = {};
+
+    function toggleInput(id) {
+      const input = document.getElementById(id);
+      input.style.display = input.style.display === 'block' ? 'none' : 'block';
+    }
+
     let dadosAtuais = [];
 
-    function ocultarTodosConteudos() {
-      tabela.style.display = 'none';
-      filtroContainer.style.display = 'none';
-      bonificacoesContainer.style.display = 'none';
-      dashboardContainer.style.display = 'none';
+    function processarDados(dados) {
+      // Processar os dados para remover score_ranking e renomear campos
+      return dados.map(item => {
+        const itemProcessado = { ...item };
+        
+        // Remover score_ranking
+        if (itemProcessado.hasOwnProperty('score_ranking')) {
+          delete itemProcessado.score_ranking;
+        }
+        
+        // Renomear posicao_no_ranking para Posição
+        if (itemProcessado.hasOwnProperty('posicao_no_ranking')) {
+          itemProcessado['Posição'] = itemProcessado.posicao_no_ranking;
+          delete itemProcessado.posicao_no_ranking;
+        }
+        
+        // Renomear score_formatado para Score
+        if (itemProcessado.hasOwnProperty('score_formatado')) {
+          itemProcessado['Score'] = itemProcessado.score_formatado;
+          delete itemProcessado.score_formatado;
+        }
+        
+        return itemProcessado;
+      });
     }
 
     function renderizarTabela(dados) {
       cabecalhoTabela.innerHTML = "";
       corpoTabela.innerHTML = "";
+
       if (dados.length === 0) {
         corpoTabela.innerHTML = "<tr><td colspan='100%'>Nenhum dado encontrado.</td></tr>";
         return;
       }
+
       const headers = Object.keys(dados[0]);
       const trHead = document.createElement("tr");
       headers.forEach(header => {
@@ -121,6 +467,7 @@
         trHead.appendChild(th);
       });
       cabecalhoTabela.appendChild(trHead);
+
       dados.forEach(item => {
         const tr = document.createElement("tr");
         headers.forEach(key => {
@@ -132,98 +479,260 @@
       });
     }
 
+    function aplicarFiltros() {
+      const filtrados = dadosAtuais.filter(item => {
+        return Object.keys(filtros).every(campo => {
+          const input = filtros[campo].value.toLowerCase();
+          return !input || item[campo]?.toString().toLowerCase().includes(input);
+        });
+      });
+      renderizarTabela(filtrados);
+    }
+
+    function ocultarTodosConteudos() {
+      tabela.style.display = 'none';
+      filtroContainer.style.display = 'none';
+      bonificacoesContainer.style.display = 'none';
+    }
+
     function prepararTabela(dados, nomeCenario) {
       ocultarTodosConteudos();
-      dadosAtuais = dados;
+      
+      // Processar dados antes de atribuir a dadosAtuais
+      dadosAtuais = processarDados(dados);
+      
+      Object.values(filtros).forEach(input => {
+        input.value = '';
+        input.removeEventListener("input", aplicarFiltros);
+        input.addEventListener("input", aplicarFiltros);
+      });
+
       tabela.style.display = 'table';
       filtroContainer.style.display = 'block';
-      document.querySelector('h2').textContent = `Relatório da Análise – ${nomeCenario}`;
+
+      const titulo = document.querySelector('h2');
+      titulo.textContent = `Relatório da Análise – ${nomeCenario}`;
+
       renderizarTabela(dadosAtuais);
     }
 
     function mostrarBonificacoes(bonificacoes, nomeCenario) {
       ocultarTodosConteudos();
+      
       bonificacoesContainer.style.display = 'block';
-      document.querySelector('h2').textContent = `Bonificações – ${nomeCenario}`;
-      // Mantém o HTML original com podium etc.
-      let html = `<h3>🏆 Top 3 Funcionários - ${nomeCenario}</h3><div class="podium-container">`;
-      bonificacoes.forEach((bonus, index) => {
-        const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
-        const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-        html += `
-          <div class="posicao-card ${posicaoClass}">
-            <div class="medalha">${medalha}</div>
-            <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
-            <div class="funcionario-info">Score: ${bonus.score_final || '0.00'}<br>${bonus.departamento || ''}</div>
-            <div class="bonificacao-opcoes">
-              <h4>🎁 Opções de Bonificação</h4>
-              <div class="opcao-linha"><span class="opcao-tipo">💎 Item:</span><br>${bonus.opcao_item || ''}</div>
-              <div class="opcao-linha"><span class="opcao-tipo">✈️ Viagem:</span><br>${bonus.opcao_viagem || ''}</div>
-              <div class="opcao-linha"><span class="opcao-tipo">💰 Bônus:</span><br>${bonus.opcao_bonus_salarial || ''}</div>
-              <div class="justificativa">${bonus.justificativa || ''}</div>
-            </div>
-          </div>`;
-      });
-      html += `</div>`;
-      bonificacoesContainer.innerHTML = html;
-    }
+      
+      const titulo = document.querySelector('h2');
+      titulo.textContent = `Bonificações – ${nomeCenario}`;
 
-    function mostrarDashboard(relatorios, bonificacoes) {
-      ocultarTodosConteudos();
-      dashboardContainer.style.display = "block";
-      document.querySelector('h2').textContent = "📊 Dashboard Analítica";
-      dashboardContainer.innerHTML = `
-        <div class="resumo-bonificacoes">
-          <div class="resumo-stats" id="dashboardResumo"></div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px;">
-          <div><canvas id="chartFuncionarios"></canvas></div>
-          <div><canvas id="chartBonificacoes"></canvas></div>
-          <div><canvas id="chartScore"></canvas></div>
-        </div>
-      `;
-      const dashboardResumo = document.getElementById("dashboardResumo");
-      const totalCenarios = Object.keys(relatorios).length;
-      const totalFuncionarios = Object.values(relatorios).reduce((a, arr) => a + arr.length, 0);
-      const totalBonificacoes = Object.values(bonificacoes).reduce((a, arr) => a + arr.length, 0);
-      dashboardResumo.innerHTML = `
-        <div class="stat-item"><div class="stat-number">${totalCenarios}</div><div class="stat-label">Cenários</div></div>
-        <div class="stat-item"><div class="stat-number">${totalFuncionarios}</div><div class="stat-label">Funcionários</div></div>
-        <div class="stat-item"><div class="stat-number">${totalBonificacoes}</div><div class="stat-label">Bonificações</div></div>
-      `;
-      // Chart.js
-      new Chart(document.getElementById("chartFuncionarios"), { type: "bar", data: { labels: Object.keys(relatorios), datasets: [{ data: Object.values(relatorios).map(r => r.length), backgroundColor: "#e07b3c" }] } });
-      let contagemBonificacoes = { Item: 0, Viagem: 0, Bônus: 0 };
-      Object.values(bonificacoes).forEach(lista => { lista.forEach(b => { if (b.opcao_item) contagemBonificacoes.Item++; if (b.opcao_viagem) contagemBonificacoes.Viagem++; if (b.opcao_bonus_salarial) contagemBonificacoes.Bônus++; }); });
-      new Chart(document.getElementById("chartBonificacoes"), { type: "doughnut", data: { labels: Object.keys(contagemBonificacoes), datasets: [{ data: Object.values(contagemBonificacoes), backgroundColor: ["#4caf50", "#2196f3", "#ff9800"] }] } });
-      new Chart(document.getElementById("chartScore"), { type: "radar", data: { labels: Object.keys(relatorios), datasets: [{ label: "Score Médio", data: Object.values(relatorios).map(r => (r.reduce((a,f)=>a+(parseFloat(f.Score)||0),0)/r.length)||0), backgroundColor: "rgba(224,123,60,0.2)", borderColor: "#e07b3c" }] } });
+      let html = `<h3>🏆 Top 3 Funcionários - ${nomeCenario}</h3>`;
+      
+      if (!bonificacoes || bonificacoes.length === 0) {
+        html += '<p style="text-align: center; color: #666;">Nenhuma bonificação disponível para este cenário.</p>';
+      } else {
+        html += '<div class="podium-container">';
+        
+        bonificacoes.forEach((bonus, index) => {
+          const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
+          const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+          const posicao = index + 1;
+          
+          html += `
+            <div class="posicao-card ${posicaoClass}">
+              <div class="medalha">${medalha}</div>
+              <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
+              <div class="funcionario-info">
+                Score: ${bonus.score_final || '0.00'}<br>
+                ${bonus.departamento || 'Departamento não informado'}
+              </div>
+              
+              <div class="bonificacao-opcoes">
+                <h4>🎁 Opções de Bonificação</h4>
+                <div class="opcao-linha">
+                  <span class="opcao-tipo">💎 Item:</span><br>
+                  ${bonus.opcao_item || 'Não definido'}
+                </div>
+                <div class="opcao-linha">
+                  <span class="opcao-tipo">✈️ Viagem:</span><br>
+                  ${bonus.opcao_viagem || 'Não definido'}
+                </div>
+                <div class="opcao-linha">
+                  <span class="opcao-tipo">💰 Bônus:</span><br>
+                  ${bonus.opcao_bonus_salarial || 'Não definido'}
+                </div>
+                <div class="justificativa">
+                  ${bonus.justificativa || 'Justificativa não informada'}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+      }
+      
+      bonificacoesContainer.innerHTML = html;
     }
 
     function criarGrupoCenario(cenario, dados, bonificacoes) {
       const grupo = document.createElement('div');
       grupo.className = 'cenario-grupo';
-      const titulo = document.createElement('div'); titulo.className = 'cenario-titulo'; titulo.textContent = `${cenario} (${dados.length} registros)`;
+
+      const titulo = document.createElement('div');
+      titulo.className = 'cenario-titulo';
+      titulo.textContent = `${cenario} (${dados.length} registros)`;
+
       const botoes = document.createElement('div');
-      const btnDados = document.createElement('button'); btnDados.textContent = "Ver Funcionários"; btnDados.onclick = () => prepararTabela(dados, cenario);
-      const btnBonificacoes = document.createElement('button'); btnBonificacoes.className = 'btn-bonificacoes'; btnBonificacoes.textContent = "Ver Bonificações"; btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoes, cenario);
-      const btnDashboard = document.createElement('button'); btnDashboard.textContent = "Ver Dashboard"; btnDashboard.onclick = () => mostrarDashboard(dadosCompletos.relatorios, dadosCompletos.bonificacoes);
-      botoes.appendChild(btnDados); botoes.appendChild(btnBonificacoes); botoes.appendChild(btnDashboard);
-      grupo.appendChild(titulo); grupo.appendChild(botoes);
+      botoes.className = 'cenario-botoes';
+
+      const btnDados = document.createElement('button');
+      btnDados.textContent = `Ver Funcionários`;
+      btnDados.onclick = () => prepararTabela(dados, cenario);
+
+      const btnBonificacoes = document.createElement('button');
+      btnBonificacoes.className = 'btn-bonificacoes';
+      btnBonificacoes.textContent = `Ver Bonificações`;
+      btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoes, cenario);
+
+      const btnDashboard = document.createElement('button');
+      btnDashboard.textContent = `Ver Dashboard`;
+      btnDashboard.onclick = () => mostrarDashboard(dadosCompletos.relatorios, dadosCompletos.bonificacoes);
+
+botoes.appendChild(btnDashboard);
+
+
+      botoes.appendChild(btnDados);
+      botoes.appendChild(btnBonificacoes);
+
+      grupo.appendChild(titulo);
+      grupo.appendChild(botoes);
+
       return grupo;
-    }
+      }
 
     fetch("https://tccgrupo1.app.n8n.cloud/webhook/relatorios")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then(data => {
         statusContainer.innerHTML = '';
         dadosCompletos = data;
+
         const relatorios = data.relatorios || {};
         const bonificacoes = data.bonificacoes || {};
+        let dadosPresentes = false;
+
         for (const cenario in relatorios) {
-          const grupo = criarGrupoCenario(cenario, relatorios[cenario], bonificacoes[cenario] || []);
-          botoesRelatorios.appendChild(grupo);
+          const dados = relatorios[cenario];
+          if (Array.isArray(dados) && dados.length > 0) {
+            dadosPresentes = true;
+            const bonificacoesCenario = bonificacoes[cenario] || [];
+            const grupo = criarGrupoCenario(cenario, dados, bonificacoesCenario);
+            botoesRelatorios.appendChild(grupo);
+          }
         }
+
+        if (!dadosPresentes) {
+          statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
+        } else {
+          statusContainer.innerHTML = '<div class="success">Relatórios carregados com sucesso!</div>';
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao carregar relatórios:', error);
+        statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
       });
+
+      const dashboardContainer = document.getElementById("dashboardContainer");
+const dashboardResumo = document.getElementById("dashboardResumo");
+
+function mostrarDashboard(relatorios, bonificacoes) {
+  ocultarTodosConteudos();
+  dashboardContainer.style.display = "block";
+
+  // ======== RESUMO =========
+  const totalCenarios = Object.keys(relatorios).length;
+  const totalFuncionarios = Object.values(relatorios).reduce((acc, arr) => acc + arr.length, 0);
+  const totalBonificacoes = Object.values(bonificacoes).reduce((acc, arr) => acc + arr.length, 0);
+
+  dashboardResumo.innerHTML = `
+    <div class="stat-item">
+      <div class="stat-number">${totalCenarios}</div>
+      <div class="stat-label">Cenários</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">${totalFuncionarios}</div>
+      <div class="stat-label">Funcionários</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">${totalBonificacoes}</div>
+      <div class="stat-label">Bonificações</div>
+    </div>
+  `;
+
+  // ======== FUNCIONÁRIOS POR CENÁRIO =========
+  const funcionariosLabels = Object.keys(relatorios);
+  const funcionariosData = Object.values(relatorios).map(arr => arr.length);
+
+  new Chart(document.getElementById("chartFuncionarios"), {
+    type: "bar",
+    data: {
+      labels: funcionariosLabels,
+      datasets: [{
+        label: "Funcionários por Cenário",
+        data: funcionariosData,
+        backgroundColor: "#e07b3c"
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+  });
+
+  // ======== TIPOS DE BONIFICAÇÕES =========
+  let contagemBonificacoes = { Item: 0, Viagem: 0, Bônus: 0 };
+
+  Object.values(bonificacoes).forEach(lista => {
+    lista.forEach(b => {
+      if (b.opcao_item) contagemBonificacoes.Item++;
+      if (b.opcao_viagem) contagemBonificacoes.Viagem++;
+      if (b.opcao_bonus_salarial) contagemBonificacoes.Bônus++;
+    });
+  });
+
+  new Chart(document.getElementById("chartBonificacoes"), {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(contagemBonificacoes),
+      datasets: [{
+        data: Object.values(contagemBonificacoes),
+        backgroundColor: ["#4caf50", "#2196f3", "#ff9800"]
+      }]
+    }
+  });
+
+  // ======== SCORE MÉDIO POR CENÁRIO =========
+  const scoreMedioLabels = Object.keys(relatorios);
+  const scoreMedioData = Object.values(relatorios).map(arr => {
+    if (!arr.length) return 0;
+    const total = arr.reduce((acc, f) => acc + (parseFloat(f.Score) || 0), 0);
+    return (total / arr.length).toFixed(2);
+  });
+
+  new Chart(document.getElementById("chartScore"), {
+    type: "radar",
+    data: {
+      labels: scoreMedioLabels,
+      datasets: [{
+        label: "Score Médio",
+        data: scoreMedioData,
+        backgroundColor: "rgba(224,123,60,0.2)",
+        borderColor: "#e07b3c"
+      }]
+    }
+  });
+}
+
   </script>
 </body>
 </html>
