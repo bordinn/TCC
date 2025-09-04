@@ -225,39 +225,52 @@
     }
 
     function mostrarBonificacoes(bonificacoes, nomeCenario) {
-      ocultarTodosConteudos();
-      bonificacoesContainer.style.display = 'block';
-      const titulo = document.querySelector('h2');
-      titulo.textContent = `Bonificações – ${nomeCenario}`;
-      let html = `<h3>🏆 Top 3 Funcionários - ${nomeCenario}</h3>`;
-      if (!bonificacoes || bonificacoes.length === 0) {
-        html += '<p style="text-align: center; color: #666;">Nenhuma bonificação disponível para este cenário.</p>';
-      } else {
-        html += '<div class="podium-container">';
-        bonificacoes.forEach((bonus, index) => {
-          const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
-          const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
-          html += `
-            <div class="posicao-card ${posicaoClass}">
-              <div class="medalha">${medalha}</div>
-              <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
-              <div class="funcionario-info">
-                Score: ${bonus.score_formatado || bonus.score || '0.00'}<br>
-                ${bonus.departamento || 'Departamento não informado'}
-              </div>
-              <div class="bonificacao-opcoes">
-                <h4>🎁 Opções de Bonificação</h4>
-                <div class="opcao-linha"><span class="opcao-tipo">💎 Item:</span><br>${bonus.opcao_item || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">✈️ Viagem:</span><br>${bonus.opcao_viagem || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">💰 Bônus:</span><br>${bonus.opcao_bonus_salarial || 'Não definido'}</div>
-                <div class="justificativa">${bonus.justificativa || 'Justificativa não informada'}</div>
-              </div>
-            </div>`;
-        });
-        html += '</div>';
-      }
-      bonificacoesContainer.innerHTML = html;
-    }
+  ocultarTodosConteudos();
+  bonificacoesContainer.style.display = 'block';
+  const titulo = document.querySelector('h2');
+  titulo.textContent = `Bonificações – ${nomeCenario}`;
+
+  let html = `<h3>🏆 Top 3 Funcionários - ${nomeCenario}</h3>`;
+  if (!bonificacoes || bonificacoes.length === 0) {
+    html += '<p style="text-align: center; color: #666;">Nenhuma bonificação disponível para este cenário.</p>';
+  } else {
+    html += '<div class="podium-container">';
+
+    bonificacoes.forEach((bonus, index) => {
+      // procura o funcionário correspondente no relatório
+      const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
+        .find(f => f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula);
+
+      // pega o score certo (normalizado)
+      const score = funcionario
+        ? (funcionario["Score"] || funcionario.score_formatado || funcionario.score || '0.00')
+        : '0.00';
+
+      const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
+      const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+      html += `
+        <div class="posicao-card ${posicaoClass}">
+          <div class="medalha">${medalha}</div>
+          <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
+          <div class="funcionario-info">
+            Score: ${score}<br>
+            ${bonus.departamento || 'Departamento não informado'}
+          </div>
+          <div class="bonificacao-opcoes">
+            <h4>🎁 Opções de Bonificação</h4>
+            <div class="opcao-linha"><span class="opcao-tipo">💎 Item:</span><br>${bonus.opcao_item || 'Não definido'}</div>
+            <div class="opcao-linha"><span class="opcao-tipo">✈️ Viagem:</span><br>${bonus.opcao_viagem || 'Não definido'}</div>
+            <div class="opcao-linha"><span class="opcao-tipo">💰 Bônus:</span><br>${bonus.opcao_bonus_salarial || 'Não definido'}</div>
+            <div class="justificativa">${bonus.justificativa || 'Justificativa não informada'}</div>
+          </div>
+        </div>`;
+    });
+
+    html += '</div>';
+  }
+  bonificacoesContainer.innerHTML = html;
+}
+
 
     function criarGrupoCenario(cenario, dados, bonificacoes) {
       const grupo = document.createElement('div');
