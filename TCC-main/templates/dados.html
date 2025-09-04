@@ -53,6 +53,21 @@
       color: #333;
     }
 
+    /* Destacar as colunas Posicao e Score */
+    th:nth-child(1), td:nth-child(1) { /* Posicao */
+      background-color: #e8f4f8;
+      font-weight: bold;
+      text-align: center;
+      color: #2563eb;
+    }
+
+    th:nth-child(2), td:nth-child(2) { /* Score */
+      background-color: #f0f9ff;
+      font-weight: bold;
+      text-align: center;
+      color: #1d4ed8;
+    }
+
     tr:hover {
       background-color: #f9f9f9;
     }
@@ -333,6 +348,8 @@
     <div class="filtro-container" id="filtroContainer" style="display: none;">
       <h3>Filtros</h3>
       <div class="filtros-grid">
+        <div class="filtro-box"><button onclick="toggleInput('filtroPosicao')">🏆 Posição</button><input type="text" id="filtroPosicao" class="filtro-input" placeholder="Digite a posição..."></div>
+        <div class="filtro-box"><button onclick="toggleInput('filtroScore')">📊 Score</button><input type="text" id="filtroScore" class="filtro-input" placeholder="Digite o score..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroMatricula')">🔍 Matrícula</button><input type="text" id="filtroMatricula" class="filtro-input" placeholder="Digite a matrícula..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroNome')">🔍 Nome</button><input type="text" id="filtroNome" class="filtro-input" placeholder="Digite o nome..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroDepartamento')">🏢 Departamento</button><input type="text" id="filtroDepartamento" class="filtro-input" placeholder="Digite o departamento..."></div>
@@ -367,6 +384,8 @@
     const bonificacoesContainer = document.getElementById("bonificacoesContainer");
 
     const filtros = {
+      "Posicao": document.getElementById("filtroPosicao"),
+      "Score": document.getElementById("filtroScore"),
       "Matrícula": document.getElementById("filtroMatricula"),
       "Nome Completo": document.getElementById("filtroNome"),
       "Departamento": document.getElementById("filtroDepartamento"),
