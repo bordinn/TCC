@@ -90,7 +90,6 @@
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px; margin-top:30px;">
         <div><canvas id="chartScoreRange"></canvas></div>    <!-- Range de Scores por Departamento -->
         <div><canvas id="chartTempo"></canvas></div>         <!-- Score vs Tempo de Casa -->
-        <div><canvas id="chartCompetencias"></canvas></div>  <!-- Radar de Competências -->
       </div>
     </div>
 
@@ -336,7 +335,7 @@
     const dashboardContainer = document.getElementById("dashboardContainer");
     const dashboardResumo = document.getElementById("dashboardResumo");
 
-    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null, chartScoreRange: null, chartTempo: null, chartCompetencias: null };
+    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null, chartScoreRange: null, chartTempo: null };
     function safeDestroy(id) { if (charts[id]) { charts[id].destroy(); charts[id] = null; } }
 
     function toNumberScore(v) {
@@ -513,25 +512,36 @@
         options: { responsive: true, plugins: { legend: { display: false } } }
       });
 
-      // ======== 4) RANGE DE SCORES POR DEPARTAMENTO (Box Plot simulado) =========
-      const rangeData = depLabels.map(dep => {
+      // ======== 4) VARIABILIDADE DE SCORES POR DEPARTAMENTO =========
+      const variabilidadeData = depLabels.map(dep => {
         const scoresNoDep = dadosProc
           .filter(f => (f["Departamento"] || f["departamento"] || "Não informado") === dep)
           .map(f => toNumberScore(f["Score"]))
           .filter(Number.isFinite)
           .sort((a,b)=>a-b);
         
-        if (!scoresNoDep.length) return { min: 0, max: 0, q1: 0, mediana: 0, q3: 0, media: 0 };
+        if (!scoresNoDep.length) return { 
+          percentil10: 0, percentil25: 0, percentil75: 0, percentil90: 0,
+          amplitude: 0, coefVariacao: 0 
+        };
         
         const n = scoresNoDep.length;
-        const min = scoresNoDep[0];
-        const max = scoresNoDep[n-1];
-        const mediana = n%2 ? scoresNoDep[Math.floor(n/2)] : (scoresNoDep[n/2-1] + scoresNoDep[n/2])/2;
-        const q1 = n >= 4 ? scoresNoDep[Math.floor(n*0.25)] : min;
-        const q3 = n >= 4 ? scoresNoDep[Math.floor(n*0.75)] : max;
         const media = scoresNoDep.reduce((a,b)=>a+b,0)/n;
         
-        return { min, max, q1, mediana, q3, media };
+        // Cálculo de percentis
+        const p10 = scoresNoDep[Math.floor(n * 0.1)] || scoresNoDep[0];
+        const p25 = scoresNoDep[Math.floor(n * 0.25)] || scoresNoDep[0];
+        const p75 = scoresNoDep[Math.floor(n * 0.75)] || scoresNoDep[n-1];
+        const p90 = scoresNoDep[Math.floor(n * 0.9)] || scoresNoDep[n-1];
+        
+        // Amplitude interquartil (mostra dispersão central)
+        const amplitude = p75 - p25;
+        
+        // Coeficiente de variação (desvio/média * 100)
+        const desvio = Math.sqrt(scoresNoDep.reduce((s,v)=>s+(v-media)**2,0)/n);
+        const coefVariacao = media > 0 ? (desvio / media) * 100 : 0;
+        
+        return { percentil10: p10, percentil25: p25, percentil75: p75, percentil90: p90, amplitude, coefVariacao };
       });
 
       safeDestroy('chartScoreRange');
@@ -540,15 +550,58 @@
         data: {
           labels: depLabels,
           datasets: [
-            { label: "Mínimo", data: rangeData.map(d => d.min), backgroundColor: "#ff5722", order: 3 },
-            { label: "Máximo", data: rangeData.map(d => d.max), backgroundColor: "#4caf50", order: 1 },
-            { label: "Média", data: rangeData.map(d => d.media), backgroundColor: "#ff9800", order: 2 }
+            { 
+              label: "10º Percentil", 
+              data: variabilidadeData.map(d => d.percentil10), 
+              backgroundColor: "#e3f2fd",
+              borderColor: "#1976d2",
+              borderWidth: 1
+            },
+            { 
+              label: "25º Percentil", 
+              data: variabilidadeData.map(d => d.percentil25), 
+              backgroundColor: "#fff3e0",
+              borderColor: "#f57c00",
+              borderWidth: 1
+            },
+            { 
+              label: "75º Percentil", 
+              data: variabilidadeData.map(d => d.percentil75), 
+              backgroundColor: "#e8f5e8",
+              borderColor: "#388e3c",
+              borderWidth: 1
+            },
+            { 
+              label: "90º Percentil", 
+              data: variabilidadeData.map(d => d.percentil90), 
+              backgroundColor: "#fce4ec",
+              borderColor: "#c2185b",
+              borderWidth: 1
+            }
           ]
         },
         options: {
           responsive: true,
-          plugins: { title: { display: true, text: "Range de Scores por Departamento" } },
-          scales: { y: { beginAtZero: true } }
+          plugins: { 
+            title: { display: true, text: "Variabilidade de Scores por Departamento (Percentis)" },
+            tooltip: {
+              callbacks: {
+                afterBody: function(tooltipItems) {
+                  const index = tooltipItems[0].dataIndex;
+                  const dados = variabilidadeData[index];
+                  return [
+                    `Amplitude IQR: ${dados.amplitude.toFixed(2)}`,
+                    `Coef. Variação: ${dados.coefVariacao.toFixed(1)}%`
+                  ];
+                }
+              }
+            }
+          },
+          scales: { 
+            y: { beginAtZero: true },
+            x: { ticks: { maxRotation: 45 } }
+          },
+          interaction: { mode: 'index', intersect: false }
         }
       });
 
