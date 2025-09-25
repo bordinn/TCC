@@ -79,11 +79,18 @@
       <div class="resumo-bonificacoes">
         <div class="resumo-stats" id="dashboardResumo"></div>
       </div>
-      <!-- Mantemos os mesmos IDs de canvas, mas com novos conteúdos: -->
+      <!-- Gráficos principais -->
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px;">
         <div><canvas id="chartFuncionarios"></canvas></div> <!-- Média de Score por Departamento -->
         <div><canvas id="chartBonificacoes"></canvas></div> <!-- Top 10 Scores -->
         <div><canvas id="chartScore"></canvas></div>         <!-- Distribuição (Histograma) de Scores -->
+      </div>
+      
+      <!-- Novos gráficos adicionais -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px; margin-top:30px;">
+        <div><canvas id="chartScoreRange"></canvas></div>    <!-- Range de Scores por Departamento -->
+        <div><canvas id="chartTempo"></canvas></div>         <!-- Score vs Tempo de Casa -->
+        <div><canvas id="chartCompetencias"></canvas></div>  <!-- Radar de Competências -->
       </div>
     </div>
 
@@ -206,7 +213,7 @@
       tabela.style.display = 'none';
       filtroContainer.style.display = 'none';
       bonificacoesContainer.style.display = 'none';
-      // dashboard é controlado separadamente
+      document.getElementById('dashboardContainer').style.display = 'none';
     }
 
     function prepararTabela(dados, nomeCenario) {
@@ -325,11 +332,11 @@
         statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
       });
 
-    // ======== NOVA LÓGICA DO DASHBOARD ========
+    // ======== NOVA LÓGICA DO DASHBOARD COM 6 GRÁFICOS ========
     const dashboardContainer = document.getElementById("dashboardContainer");
     const dashboardResumo = document.getElementById("dashboardResumo");
 
-    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null };
+    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null, chartScoreRange: null, chartTempo: null, chartCompetencias: null };
     function safeDestroy(id) { if (charts[id]) { charts[id].destroy(); charts[id] = null; } }
 
     function toNumberScore(v) {
@@ -504,6 +511,175 @@
         type: "bar",
         data: { labels: binLabels, datasets: [{ label: "Distribuição de Scores", data: counts, backgroundColor: "#2196f3" }] },
         options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+
+      // ======== 4) RANGE DE SCORES POR DEPARTAMENTO (Box Plot simulado) =========
+      const rangeData = depLabels.map(dep => {
+        const scoresNoDep = dadosProc
+          .filter(f => (f["Departamento"] || f["departamento"] || "Não informado") === dep)
+          .map(f => toNumberScore(f["Score"]))
+          .filter(Number.isFinite)
+          .sort((a,b)=>a-b);
+        
+        if (!scoresNoDep.length) return { min: 0, max: 0, q1: 0, mediana: 0, q3: 0, media: 0 };
+        
+        const n = scoresNoDep.length;
+        const min = scoresNoDep[0];
+        const max = scoresNoDep[n-1];
+        const mediana = n%2 ? scoresNoDep[Math.floor(n/2)] : (scoresNoDep[n/2-1] + scoresNoDep[n/2])/2;
+        const q1 = n >= 4 ? scoresNoDep[Math.floor(n*0.25)] : min;
+        const q3 = n >= 4 ? scoresNoDep[Math.floor(n*0.75)] : max;
+        const media = scoresNoDep.reduce((a,b)=>a+b,0)/n;
+        
+        return { min, max, q1, mediana, q3, media };
+      });
+
+      safeDestroy('chartScoreRange');
+      charts.chartScoreRange = new Chart(document.getElementById("chartScoreRange"), {
+        type: "bar",
+        data: {
+          labels: depLabels,
+          datasets: [
+            { label: "Mínimo", data: rangeData.map(d => d.min), backgroundColor: "#ff5722", order: 3 },
+            { label: "Máximo", data: rangeData.map(d => d.max), backgroundColor: "#4caf50", order: 1 },
+            { label: "Média", data: rangeData.map(d => d.media), backgroundColor: "#ff9800", order: 2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: "Range de Scores por Departamento" } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // ======== 5) SCORE VS TEMPO DE CASA =========
+      const tempoData = dadosProc.map(f => {
+        const admissao = f["Data de Admissão"] || f["data_admissao"] || "";
+        let anosNaCasa = 0;
+        
+        if (admissao) {
+          try {
+            // Tenta diferentes formatos de data
+            let dataAdmissao;
+            if (admissao.includes('/')) {
+              const partes = admissao.split('/');
+              if (partes.length === 3) {
+                // Assume formato DD/MM/YYYY ou MM/DD/YYYY
+                const d = parseInt(partes[0]);
+                const m = parseInt(partes[1]);
+                const y = parseInt(partes[2]);
+                dataAdmissao = new Date(y, m-1, d);
+              }
+            } else if (admissao.includes('-')) {
+              dataAdmissao = new Date(admissao);
+            }
+            
+            if (dataAdmissao && !isNaN(dataAdmissao.getTime())) {
+              const agora = new Date();
+              anosNaCasa = (agora - dataAdmissao) / (1000 * 60 * 60 * 24 * 365.25);
+              anosNaCasa = Math.max(0, anosNaCasa);
+            }
+          } catch (e) {
+            anosNaCasa = 0;
+          }
+        }
+
+        return {
+          anos: anosNaCasa,
+          score: toNumberScore(f["Score"]) || 0,
+          nome: f["Nome Completo"] || f["Matrícula"] || "—"
+        };
+      }).filter(d => d.anos > 0 && Number.isFinite(d.score));
+
+      safeDestroy('chartTempo');
+      charts.chartTempo = new Chart(document.getElementById("chartTempo"), {
+        type: "scatter",
+        data: {
+          datasets: [{
+            label: "Score vs Tempo de Casa",
+            data: tempoData.map(d => ({ x: d.anos, y: d.score })),
+            backgroundColor: "#9c27b0",
+            borderColor: "#9c27b0"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            title: { display: true, text: "Relação Score x Tempo de Casa" },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const ponto = tempoData[context.dataIndex];
+                  return `${ponto.nome}: ${ponto.anos.toFixed(1)} anos, Score: ${ponto.score.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: "Anos na Empresa" } },
+            y: { title: { display: true, text: "Score" }, beginAtZero: true }
+          }
+        }
+      });
+
+      // ======== 6) RADAR DE COMPETÊNCIAS (Média das Avaliações) =========
+      const competencias = ['Técnica', 'Comportamental', 'Softskills'];
+      const mediaCompetencias = competencias.map(comp => {
+        const campo = `Avaliação ${comp === 'Técnica' ? 'Técnica (0-10)' : comp === 'Comportamental' ? 'Comportamental (0-10)' : 'de softskills'}`;
+        const valores = dadosProc
+          .map(f => toNumberScore(f[campo]))
+          .filter(Number.isFinite);
+        
+        return valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : 0;
+      });
+
+      // Adiciona dados dos top 3 para comparação
+      const top3Competencias = (bonificacoes || []).slice(0, 3).map((bonus, idx) => {
+        const funcionario = dadosProc.find(f => 
+          f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula
+        );
+        
+        if (!funcionario) return null;
+        
+        return {
+          label: `${idx + 1}º Lugar`,
+          data: competencias.map(comp => {
+            const campo = `Avaliação ${comp === 'Técnica' ? 'Técnica (0-10)' : comp === 'Comportamental' ? 'Comportamental (0-10)' : 'de softskills'}`;
+            return toNumberScore(funcionario[campo]) || 0;
+          }),
+          backgroundColor: idx === 0 ? 'rgba(255, 215, 0, 0.2)' : idx === 1 ? 'rgba(192, 192, 192, 0.2)' : 'rgba(205, 127, 50, 0.2)',
+          borderColor: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32',
+          borderWidth: 2
+        };
+      }).filter(Boolean);
+
+      safeDestroy('chartCompetencias');
+      charts.chartCompetencias = new Chart(document.getElementById("chartCompetencias"), {
+        type: "radar",
+        data: {
+          labels: competencias,
+          datasets: [
+            {
+              label: "Média Geral",
+              data: mediaCompetencias,
+              backgroundColor: 'rgba(224, 123, 60, 0.2)',
+              borderColor: '#e07b3c',
+              borderWidth: 2
+            },
+            ...top3Competencias
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: "Competências: Média Geral vs Top 3" } },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 10,
+              ticks: { stepSize: 2 }
+            }
+          }
+        }
       });
     }
   </script>
