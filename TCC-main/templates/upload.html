@@ -81,7 +81,7 @@
         formData.append('file', arquivoSelecionado);
         formData.append('area', document.getElementById("areaSelect").value);
 
-        const resposta = await fetch('https://iafyt.app.n8n.cloud/webhook/upload-planilha', {
+        const resposta = await fetch('https://iafyt2.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
           body: formData
         });
