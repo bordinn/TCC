@@ -67,12 +67,11 @@
     .stat-number { font-size: 1.1em; font-weight: bold; margin-bottom: 5px; }
     .stat-label { font-size: 0.9em; opacity: 0.7; }
     .metodo-badge { display: inline-block; background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; margin-left: 10px; }
-    .departamentos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+    .departamentos-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; max-width: 1200px; margin-left: auto; margin-right: auto; }
     @media (max-width: 768px) { 
       .podium-container { flex-direction: column; } 
       .cenario-botoes { flex-direction: column; }
       .tabs-container { flex-wrap: wrap; }
-      .departamentos-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -268,7 +267,7 @@
             .find(f => f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula);
           const score = funcionario ? (funcionario["Score"] || funcionario.score_formatado || '0.00') : '0.00';
           const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
-          const posicaoTexto = index === 0 ? '🥇 1º Lugar' : index === 1 ? '🥈 2º Lugar' : '🥉 3º Lugar';
+          const posicaoTexto = index === 0 ? '1º Lugar' : index === 1 ? '2º Lugar' : '3º Lugar';
           
           html += `
             <div class="posicao-card ${posicaoClass}">
@@ -279,10 +278,10 @@
                 ${bonus.departamento || 'Departamento não informado'}
               </div>
               <div class="bonificacao-opcoes">
-                <h4>💎 Opções de Bonificação</h4>
-                <div class="opcao-linha"><span class="opcao-tipo">🎁 Item:</span><br>${bonus.opcao_item || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">✈️ Viagem:</span><br>${bonus.opcao_viagem || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">💰 Bônus:</span><br>${bonus.opcao_bonus_salarial || 'Não definido'}</div>
+                <h4>Opções de Bonificação</h4>
+                <div class="opcao-linha"><span class="opcao-tipo">Item:</span><br>${bonus.opcao_item || 'Não definido'}</div>
+                <div class="opcao-linha"><span class="opcao-tipo">Viagem:</span><br>${bonus.opcao_viagem || 'Não definido'}</div>
+                <div class="opcao-linha"><span class="opcao-tipo">Bônus:</span><br>${bonus.opcao_bonus_salarial || 'Não definido'}</div>
                 <div class="justificativa">${bonus.justificativa || 'Justificativa não informada'}</div>
               </div>
             </div>`;
@@ -303,28 +302,28 @@
           const bonusDept = bonificacoesDept.filter(b => b.departamento === dept).slice(0, 3);
           
           html += '<div class="departamento-section">';
-          html += `<div class="departamento-header">🏢 ${dept}</div>`;
+          html += `<div class="departamento-header">${dept}</div>`;
           html += '<div class="departamento-content">';
           
           bonusDept.forEach((bonus, idx) => {
             const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
               .find(f => f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula);
             const score = funcionario ? (funcionario["Score"] || funcionario.score_formatado || '0.00') : '0.00';
-            const medalha = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+            const medalha = idx === 0 ? '1º' : idx === 1 ? '2º' : '3º';
             
             html += `
               <div style="background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid ${idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <div style="font-weight: bold; font-size: 1.1em;">${medalha} ${bonus.nome_completo}</div>
+                  <div style="font-weight: bold; font-size: 1.1em;">${medalha} - ${bonus.nome_completo}</div>
                   <div style="background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">Score: ${score}</div>
                 </div>
                 <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
                   Posição no Dept: ${bonus.posicao_departamento}º | Posição Geral: ${bonus.posicao_geral}º
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85em;">
-                  <div style="margin-bottom: 6px;"><strong>🎁 Item:</strong> ${bonus.opcao_item || 'Não definido'}</div>
-                  <div style="margin-bottom: 6px;"><strong>✈️ Viagem:</strong> ${bonus.opcao_viagem || 'Não definido'}</div>
-                  <div><strong>💰 Bônus:</strong> ${bonus.opcao_bonus_salarial || 'Não definido'}</div>
+                  <div style="margin-bottom: 6px;"><strong>Item:</strong> ${bonus.opcao_item || 'Não definido'}</div>
+                  <div style="margin-bottom: 6px;"><strong>Viagem:</strong> ${bonus.opcao_viagem || 'Não definido'}</div>
+                  <div><strong>Bônus:</strong> ${bonus.opcao_bonus_salarial || 'Não definido'}</div>
                 </div>
               </div>`;
           });
@@ -359,16 +358,16 @@
       botoes.className = 'cenario-botoes';
       
       const btnDashboard = document.createElement('button');
-      btnDashboard.textContent = `📊 Dashboard`;
+      btnDashboard.textContent = `Dashboard`;
       btnDashboard.onclick = () => mostrarDashboard(cenario, dados, bonificacoesGeral);
       
       const btnDados = document.createElement('button');
-      btnDados.textContent = `👥 Funcionários`;
+      btnDados.textContent = `Funcionários`;
       btnDados.onclick = () => prepararTabela(dados, cenario);
       
       const btnBonificacoes = document.createElement('button');
       btnBonificacoes.className = 'btn-bonificacoes';
-      btnBonificacoes.textContent = `🏆 Bonificações`;
+      btnBonificacoes.textContent = `Bonificações`;
       btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoesGeral, bonificacoesDept, cenario);
       
       botoes.appendChild(btnDashboard);
@@ -406,7 +405,7 @@
           const escalaInfo = data.resumo?.escala || 'Likert 1-5';
           const totalBonifGeral = data.resumo?.total_bonificacoes_geral || 0;
           const totalBonifDept = data.resumo?.total_bonificacoes_departamentos || 0;
-          statusContainer.innerHTML = `<div class="success">✅ Relatórios carregados! Método: ${metodoInfo} | Escala: ${escalaInfo} | Bonificações: ${totalBonifGeral} gerais + ${totalBonifDept} por departamento</div>`;
+          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método: ${metodoInfo} | Escala: ${escalaInfo} | Bonificações: ${totalBonifGeral} gerais + ${totalBonifDept} por departamento</div>`;
         }
       })
       .catch(error => {
