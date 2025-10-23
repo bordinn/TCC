@@ -405,7 +405,7 @@
           const escalaInfo = data.resumo?.escala || 'Likert 1-5';
           const totalBonifGeral = data.resumo?.total_bonificacoes_geral || 0;
           const totalBonifDept = data.resumo?.total_bonificacoes_departamentos || 0;
-          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método: ${metodoInfo} | Escala: ${escalaInfo} | Bonificações: ${totalBonifGeral} gerais + ${totalBonifDept} por departamento</div>`;
+          statusContainer.innerHTML = `<div class="success">Relatórios carregados!</div>`;
         }
       })
       .catch(error => {
