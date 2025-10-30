@@ -412,4 +412,377 @@
     const dashboardContainer = document.getElementById("dashboardContainer");
     const dashboardResumo = document.getElementById("dashboardResumo");
 
-    const charts = { chartFuncionarios: null,
+    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null, chartScoreRange: null, chartTempo: null, chartCompetencias: null };
+    function safeDestroy(id) { if (charts[id]) { charts[id].destroy(); charts[id] = null; } }
+
+    function toNumberScore(v) {
+      if (v === undefined || v === null) return NaN;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        let s = v.replace('%', '').trim();
+        if (s.includes(',')) {
+          if (s.includes('.') && s.lastIndexOf('.') < s.lastIndexOf(',')) {
+            s = s.replace(/\./g, '');
+          }
+          s = s.replace(',', '.');
+        } else if (s.includes('.')) {
+          const pontos = s.split('.');
+          if (pontos.length > 2 || (pontos.length === 2 && pontos[1].length > 2)) {
+            s = s.replace(/\./g, '');
+          }
+        }
+        const n = parseFloat(s);
+        return isNaN(n) ? NaN : n;
+      }
+      return NaN;
+    }
+
+    function estatisticas(arr) {
+      const a = arr.filter(x => Number.isFinite(x)).sort((x,y)=>x-y);
+      const n = a.length;
+      const media = n ? a.reduce((s,v)=>s+v,0)/n : 0;
+      const mediana = n ? (n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2) : 0;
+      const min = n ? a[0] : 0;
+      const max = n ? a[n-1] : 0;
+      const vari = n ? a.reduce((s,v)=>s+(v-media)**2,0)/n : 0;
+      const desvio = Math.sqrt(vari);
+      return { n, media, mediana, min, max, desvio };
+    }
+
+    function binScores(values, bins = 10) {
+      const arr = values.filter(Number.isFinite);
+      if (!arr.length) return { labels: [], counts: [] };
+      const min = Math.min(...arr);
+      const max = Math.max(...arr);
+      const step = (max - min) / bins || 1;
+      const counts = new Array(bins).fill(0);
+      const labels = [];
+      for (let i=0;i<bins;i++) {
+        const a = min + i*step;
+        const b = i === bins-1 ? max : min + (i+1)*step;
+        labels.push(`${a.toFixed(1)}–${b.toFixed(1)}`);
+      }
+      arr.forEach(v => {
+        let idx = Math.floor((v - min) / step);
+        if (idx >= bins) idx = bins-1;
+        if (idx < 0) idx = 0;
+        counts[idx]++;
+      });
+      return { labels, counts };
+    }
+
+    function mostrarDashboard(nomeCenario, dados, bonificacoes) {
+      ocultarTodosConteudos();
+      dashboardContainer.style.display = "block";
+
+      const dadosProc = processarDados(dados);
+
+      const scores = dadosProc.map(f => toNumberScore(f["Score"])).filter(Number.isFinite);
+      const { n, media, mediana, max, desvio } = estatisticas(scores);
+
+      const depsTop = new Set((bonificacoes || []).map(b => (b.departamento || 'Não informado')));
+
+      dashboardResumo.innerHTML = `
+        <div class="stat-item">
+          <div class="stat-number">${nomeCenario}</div>
+          <div class="stat-label">Cenário</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${dadosProc.length}</div>
+          <div class="stat-label">Funcionários</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${media.toFixed(2)}</div>
+          <div class="stat-label">Média de Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${mediana.toFixed(2)}</div>
+          <div class="stat-label">Mediana do Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${max.toFixed(2)}</div>
+          <div class="stat-label">Maior Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${desvio.toFixed(2)}</div>
+          <div class="stat-label">Desvio Padrão</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">${depsTop.size}</div>
+          <div class="stat-label">Departamentos no Top 3</div>
+        </div>
+      `;
+
+      const mediasPorDepMap = new Map();
+      dadosProc.forEach(f => {
+        const dep = f["Departamento"] || f["departamento"] || "Não informado";
+        const sc = toNumberScore(f["Score"]);
+        if (!Number.isFinite(sc)) return;
+        if (!mediasPorDepMap.has(dep)) mediasPorDepMap.set(dep, { soma: 0, qtd: 0 });
+        const obj = mediasPorDepMap.get(dep);
+        obj.soma += sc; obj.qtd += 1;
+      });
+      const depLabels = Array.from(mediasPorDepMap.keys());
+      const depMedias = depLabels.map(d => (mediasPorDepMap.get(d).soma / mediasPorDepMap.get(d).qtd));
+
+      safeDestroy('chartFuncionarios');
+      charts.chartFuncionarios = new Chart(document.getElementById("chartFuncionarios"), {
+        type: "bar",
+        data: {
+          labels: depLabels,
+          datasets: [{
+            label: "Média de Score por Departamento",
+            data: depMedias,
+            backgroundColor: "#e07b3c"
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 5 } } }
+      });
+
+      const top = dadosProc
+        .map(f => ({
+          nome: f["Nome Completo"] || f["nome_completo"] || f["Matrícula"] || "—",
+          dep: f["Departamento"] || f["departamento"] || "Não informado",
+          score: toNumberScore(f["Score"]) || 0
+        }))
+        .sort((a,b)=>b.score-a.score)
+        .slice(0, 10);
+
+      safeDestroy('chartBonificacoes');
+      charts.chartBonificacoes = new Chart(document.getElementById("chartBonificacoes"), {
+        type: "bar",
+        data: {
+          labels: top.map(t => `${t.nome} (${t.dep})`),
+          datasets: [{
+            label: "Top 10 Scores",
+            data: top.map(t => t.score),
+            backgroundColor: "#4caf50"
+          }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 5 } } }
+      });
+
+      const { labels: binLabels, counts } = binScores(scores, 10);
+      safeDestroy('chartScore');
+      charts.chartScore = new Chart(document.getElementById("chartScore"), {
+        type: "bar",
+        data: { labels: binLabels, datasets: [{ label: "Distribuição de Scores", data: counts, backgroundColor: "#2196f3" }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+
+      const variabilidadeData = depLabels.map(dep => {
+        const scoresNoDep = dadosProc
+          .filter(f => (f["Departamento"] || f["departamento"] || "Não informado") === dep)
+          .map(f => toNumberScore(f["Score"]))
+          .filter(Number.isFinite)
+          .sort((a,b)=>a-b);
+        
+        if (!scoresNoDep.length) return { 
+          percentil10: 0, percentil25: 0, percentil75: 0, percentil90: 0,
+          amplitude: 0, coefVariacao: 0 
+        };
+        
+        const n = scoresNoDep.length;
+        const media = scoresNoDep.reduce((a,b)=>a+b,0)/n;
+        
+        const p10 = scoresNoDep[Math.floor(n * 0.1)] || scoresNoDep[0];
+        const p25 = scoresNoDep[Math.floor(n * 0.25)] || scoresNoDep[0];
+        const p75 = scoresNoDep[Math.floor(n * 0.75)] || scoresNoDep[n-1];
+        const p90 = scoresNoDep[Math.floor(n * 0.9)] || scoresNoDep[n-1];
+        
+        const amplitude = p75 - p25;
+        const desvio = Math.sqrt(scoresNoDep.reduce((s,v)=>s+(v-media)**2,0)/n);
+        const coefVariacao = media > 0 ? (desvio / media) * 100 : 0;
+        
+        return { percentil10: p10, percentil25: p25, percentil75: p75, percentil90: p90, amplitude, coefVariacao };
+      });
+
+      safeDestroy('chartScoreRange');
+      charts.chartScoreRange = new Chart(document.getElementById("chartScoreRange"), {
+        type: "bar",
+        data: {
+          labels: depLabels,
+          datasets: [
+            { 
+              label: "10º Percentil", 
+              data: variabilidadeData.map(d => d.percentil10), 
+              backgroundColor: "#e3f2fd",
+              borderColor: "#1976d2",
+              borderWidth: 1
+            },
+            { 
+              label: "25º Percentil", 
+              data: variabilidadeData.map(d => d.percentil25), 
+              backgroundColor: "#fff3e0",
+              borderColor: "#f57c00",
+              borderWidth: 1
+            },
+            { 
+              label: "75º Percentil", 
+              data: variabilidadeData.map(d => d.percentil75), 
+              backgroundColor: "#e8f5e8",
+              borderColor: "#388e3c",
+              borderWidth: 1
+            },
+            { 
+              label: "90º Percentil", 
+              data: variabilidadeData.map(d => d.percentil90), 
+              backgroundColor: "#fce4ec",
+              borderColor: "#c2185b",
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            title: { display: true, text: "Variabilidade de Scores por Departamento (Percentis)" },
+            tooltip: {
+              callbacks: {
+                afterBody: function(tooltipItems) {
+                  const index = tooltipItems[0].dataIndex;
+                  const dados = variabilidadeData[index];
+                  return [
+                    `Amplitude IQR: ${dados.amplitude.toFixed(2)}`,
+                    `Coef. Variação: ${dados.coefVariacao.toFixed(1)}%`
+                  ];
+                }
+              }
+            }
+          },
+          scales: { 
+            y: { beginAtZero: true, max: 5 },
+            x: { ticks: { maxRotation: 45 } }
+          },
+          interaction: { mode: 'index', intersect: false }
+        }
+      });
+
+      const tempoData = dadosProc.map(f => {
+        const admissao = f["Data de Admissão"] || f["data_admissao"] || "";
+        let anosNaCasa = 0;
+        
+        if (admissao) {
+          try {
+            let dataAdmissao;
+            if (admissao.includes('/')) {
+              const partes = admissao.split('/');
+              if (partes.length === 3) {
+                const d = parseInt(partes[0]);
+                const m = parseInt(partes[1]);
+                const y = parseInt(partes[2]);
+                dataAdmissao = new Date(y, m-1, d);
+              }
+            } else if (admissao.includes('-')) {
+              dataAdmissao = new Date(admissao);
+            }
+            
+            if (dataAdmissao && !isNaN(dataAdmissao.getTime())) {
+              const agora = new Date();
+              anosNaCasa = (agora - dataAdmissao) / (1000 * 60 * 60 * 24 * 365.25);
+              anosNaCasa = Math.max(0, anosNaCasa);
+            }
+          } catch (e) {
+            anosNaCasa = 0;
+          }
+        }
+
+        return {
+          anos: anosNaCasa,
+          score: toNumberScore(f["Score"]) || 0,
+          nome: f["Nome Completo"] || f["Matrícula"] || "—"
+        };
+      }).filter(d => d.anos > 0 && Number.isFinite(d.score));
+
+      safeDestroy('chartTempo');
+      charts.chartTempo = new Chart(document.getElementById("chartTempo"), {
+        type: "scatter",
+        data: {
+          datasets: [{
+            label: "Score vs Tempo de Casa",
+            data: tempoData.map(d => ({ x: d.anos, y: d.score })),
+            backgroundColor: "#9c27b0",
+            borderColor: "#9c27b0"
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { 
+            title: { display: true, text: "Relação Score x Tempo de Casa" },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const ponto = tempoData[context.dataIndex];
+                  return `${ponto.nome}: ${ponto.anos.toFixed(1)} anos, Score: ${ponto.score.toFixed(2)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: "Anos na Empresa" } },
+            y: { title: { display: true, text: "Score (1-5)" }, beginAtZero: true, max: 5 }
+          }
+        }
+      });
+
+      const competenciasCHA = ['Conceito', 'Habilidade', 'Atitude'];
+      const mediaCompetencias = competenciasCHA.map(comp => {
+        const campo = `${comp} (1-5 Likert)`;
+        const valores = dadosProc
+          .map(f => toNumberScore(f[campo]))
+          .filter(Number.isFinite);
+        
+        return valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : 0;
+      });
+
+      const top3Competencias = (bonificacoes || []).slice(0, 3).map((bonus, idx) => {
+        const funcionario = dadosProc.find(f => 
+          f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula
+        );
+        
+        if (!funcionario) return null;
+        
+        return {
+          label: `${idx + 1}º Lugar`,
+          data: competenciasCHA.map(comp => {
+            const campo = `${comp} (1-5 Likert)`;
+            return toNumberScore(funcionario[campo]) || 0;
+          }),
+          backgroundColor: idx === 0 ? 'rgba(255, 215, 0, 0.2)' : idx === 1 ? 'rgba(192, 192, 192, 0.2)' : 'rgba(205, 127, 50, 0.2)',
+          borderColor: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32',
+          borderWidth: 2
+        };
+      }).filter(Boolean);
+
+      safeDestroy('chartCompetencias');
+      charts.chartCompetencias = new Chart(document.getElementById("chartCompetencias"), {
+        type: "radar",
+        data: {
+          labels: competenciasCHA,
+          datasets: [
+            {
+              label: "Média Geral",
+              data: mediaCompetencias,
+              backgroundColor: 'rgba(224, 123, 60, 0.2)',
+              borderColor: '#e07b3c',
+              borderWidth: 2
+            },
+            ...top3Competencias
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { title: { display: true, text: "Método CHA: Média Geral vs Top 3" } },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 5,
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
