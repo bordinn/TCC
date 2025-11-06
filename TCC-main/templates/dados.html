@@ -378,7 +378,7 @@
       return grupo;
     }
 
-    fetch("https://iafyt3.app.n8n.cloud/webhook/relatorios")
+    fetch("https://iafyt5.app.n8n.cloud/webhook/relatorios")
       .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`); return res.json(); })
       .then(data => {
         statusContainer.innerHTML = '';
