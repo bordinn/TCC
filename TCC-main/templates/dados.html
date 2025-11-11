@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FYT – Dados</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='icons/732220.png') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f8f9fa; }
@@ -32,8 +30,6 @@
     .cenario-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-bonificacoes { background-color: #28a745 !important; }
     .btn-bonificacoes:hover { background-color: #218838 !important; }
-    .btn-departamentos { background-color: #6f42c1 !important; }
-    .btn-departamentos:hover { background-color: #5a32a3 !important; }
     .bonificacoes-container { background-color: #fff; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
     .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
     .tab-button { padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; color: #666; }
@@ -49,10 +45,11 @@
     .medalha { font-size: 2.5em; margin-bottom: 10px; }
     .funcionario-nome { font-weight: bold; font-size: 1.1em; color: #333; margin-bottom: 8px; }
     .funcionario-info { color: #666; font-size: 0.9em; margin-bottom: 15px; }
-    .bonificacao-opcoes { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; }
-    .bonificacao-opcoes h4 { margin: 0 0 12px 0; color: #333; font-size: 0.95em; }
-    .opcao-linha { margin-bottom: 8px; font-size: 0.85em; line-height: 1.4; }
-    .opcao-tipo { font-weight: 600; color: #e07b3c; }
+    .cha-scores { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; }
+    .cha-scores h4 { margin: 0 0 12px 0; color: #333; font-size: 0.95em; }
+    .cha-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; }
+    .cha-label { font-weight: 600; color: #e07b3c; }
+    .cha-valor { font-weight: bold; color: #333; font-size: 1.1em; }
     .justificativa { background-color: #e8f5e8; border-left: 4px solid #28a745; padding: 10px; margin-top: 12px; font-style: italic; font-size: 0.85em; border-radius: 0 6px 6px 0; }
     .departamento-section { margin-bottom: 40px; }
     .departamento-header { background: #e07b3c; color: white; padding: 15px 20px; border-radius: 10px 10px 0 0; font-size: 1.2em; font-weight: bold; text-align: center; margin-bottom: 0; }
@@ -141,7 +138,6 @@
     const filtroContainer = document.getElementById("filtroContainer");
     const bonificacoesContainer = document.getElementById("bonificacoesContainer");
 
-    // FILTROS ATUALIZADOS - REMOVIDOS: Projetos, Cursos Obrigatórios, Cursos Adicionais
     const filtros = {
       "Posição": document.getElementById("filtroPosicao"),
       "Score": document.getElementById("filtroScore"),
@@ -156,23 +152,32 @@
     };
 
     let dadosCompletos = {};
+    let dadosAtuais = [];
+
+    const charts = { 
+      chartFuncionarios: null, 
+      chartBonificacoes: null, 
+      chartScore: null, 
+      chartScoreRange: null, 
+      chartTempo: null, 
+      chartCompetencias: null 
+    };
+
+    function safeDestroy(id) { 
+      if (charts[id]) { 
+        charts[id].destroy(); 
+        charts[id] = null; 
+      } 
+    }
 
     function toggleInput(id) {
       const input = document.getElementById(id);
       input.style.display = input.style.display === 'block' ? 'none' : 'block';
     }
 
-    let dadosAtuais = [];
-
     function processarDados(dados) {
       return dados.map(item => {
         const itemProcessado = { ...item };
-        // Remove campos obsoletos
-        if (itemProcessado.hasOwnProperty('score_ranking')) delete itemProcessado.score_ranking;
-        if (itemProcessado.hasOwnProperty('Projetos Concluídos')) delete itemProcessado['Projetos Concluídos'];
-        if (itemProcessado.hasOwnProperty('Cursos Obrigatórios')) delete itemProcessado['Cursos Obrigatórios'];
-        if (itemProcessado.hasOwnProperty('Cursos Adicionais')) delete itemProcessado['Cursos Adicionais'];
-        
         if (itemProcessado.hasOwnProperty('posicao_no_ranking')) {
           itemProcessado['Posição'] = itemProcessado.posicao_no_ranking;
           delete itemProcessado.posicao_no_ranking;
@@ -183,6 +188,57 @@
         }
         return itemProcessado;
       });
+    }
+
+    function toNumberScore(v) {
+      if (v === undefined || v === null) return NaN;
+      if (typeof v === 'number') return v;
+      if (typeof v === 'string') {
+        let s = v.replace('%', '').trim();
+        if (s.includes(',')) {
+          if (s.includes('.') && s.lastIndexOf('.') < s.lastIndexOf(',')) {
+            s = s.replace(/\./g, '');
+          }
+          s = s.replace(',', '.');
+        }
+        const n = parseFloat(s);
+        return isNaN(n) ? NaN : n;
+      }
+      return NaN;
+    }
+
+    function estatisticas(arr) {
+      const a = arr.filter(x => Number.isFinite(x)).sort((x,y)=>x-y);
+      const n = a.length;
+      const media = n ? a.reduce((s,v)=>s+v,0)/n : 0;
+      const mediana = n ? (n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2) : 0;
+      const min = n ? a[0] : 0;
+      const max = n ? a[n-1] : 0;
+      const vari = n ? a.reduce((s,v)=>s+(v-media)**2,0)/n : 0;
+      const desvio = Math.sqrt(vari);
+      return { n, media, mediana, min, max, desvio };
+    }
+
+    function binScores(values, bins = 10) {
+      const arr = values.filter(Number.isFinite);
+      if (!arr.length) return { labels: [], counts: [] };
+      const min = Math.min(...arr);
+      const max = Math.max(...arr);
+      const step = (max - min) / bins || 1;
+      const counts = new Array(bins).fill(0);
+      const labels = [];
+      for (let i=0;i<bins;i++) {
+        const a = min + i*step;
+        const b = i === bins-1 ? max : min + (i+1)*step;
+        labels.push(`${a.toFixed(1)}–${b.toFixed(1)}`);
+      }
+      arr.forEach(v => {
+        let idx = Math.floor((v - min) / step);
+        if (idx >= bins) idx = bins-1;
+        if (idx < 0) idx = 0;
+        counts[idx]++;
+      });
+      return { labels, counts };
     }
 
     function renderizarTabela(dados) {
@@ -256,7 +312,6 @@
       html += '<button class="tab-button" onclick="switchTab(\'tab-departamentos\')">Top 3 por Departamento</button>';
       html += '</div>';
 
-      // TAB GERAL
       html += '<div id="tab-geral" class="tab-content active">';
       if (!bonificacoesGeral || bonificacoesGeral.length === 0) {
         html += '<p style="text-align: center; color: #666;">Nenhuma bonificação geral disponível.</p>';
@@ -264,25 +319,39 @@
         html += '<div class="podium-container">';
         bonificacoesGeral.slice(0, 3).forEach((bonus, index) => {
           const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
-            .find(f => f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula);
-          const score = funcionario ? (funcionario["Score"] || funcionario.score_formatado || '0.00') : '0.00';
+            .find(f => f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]);
+          
+          const score = bonus["Score"] || '0.00';
+          const conceito = funcionario ? (funcionario["Conceito (1-5 Likert)"] || '—') : '—';
+          const habilidade = funcionario ? (funcionario["Habilidade (1-5 Likert)"] || '—') : '—';
+          const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
+          
           const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
           const posicaoTexto = index === 0 ? '1º Lugar' : index === 1 ? '2º Lugar' : '3º Lugar';
           
           html += `
             <div class="posicao-card ${posicaoClass}">
               <div class="medalha">${posicaoTexto}</div>
-              <div class="funcionario-nome">${bonus.nome_completo || 'Nome não informado'}</div>
+              <div class="funcionario-nome">${bonus["Nome Completo"] || 'Nome não informado'}</div>
               <div class="funcionario-info">
                 Score: ${score}<br>
-                ${bonus.departamento || 'Departamento não informado'}
+                ${bonus["Departamento"] || 'Departamento não informado'}
               </div>
-              <div class="bonificacao-opcoes">
-                <h4>Opções de Bonificação</h4>
-                <div class="opcao-linha"><span class="opcao-tipo">Item:</span><br>${bonus.opcao_item || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">Viagem:</span><br>${bonus.opcao_viagem || 'Não definido'}</div>
-                <div class="opcao-linha"><span class="opcao-tipo">Bônus:</span><br>${bonus.opcao_bonus_salarial || 'Não definido'}</div>
-                <div class="justificativa">${bonus.justificativa || 'Justificativa não informada'}</div>
+              <div class="cha-scores">
+                <h4>Avaliações CHA (Método Likert 1-5)</h4>
+                <div class="cha-item">
+                  <span class="cha-label">Conceito (Conhecimento)</span>
+                  <span class="cha-valor">${conceito}</span>
+                </div>
+                <div class="cha-item">
+                  <span class="cha-label">Habilidade</span>
+                  <span class="cha-valor">${habilidade}</span>
+                </div>
+                <div class="cha-item">
+                  <span class="cha-label">Atitude</span>
+                  <span class="cha-valor">${atitude}</span>
+                </div>
+                <div class="justificativa">Selecionado pelo método CHA com base em excelência nos três pilares avaliados</div>
               </div>
             </div>`;
         });
@@ -290,16 +359,15 @@
       }
       html += '</div>';
 
-      // TAB DEPARTAMENTOS
       html += '<div id="tab-departamentos" class="tab-content">';
       if (!bonificacoesDept || bonificacoesDept.length === 0) {
         html += '<p style="text-align: center; color: #666;">Nenhuma bonificação por departamento disponível.</p>';
       } else {
-        const departamentos = [...new Set(bonificacoesDept.map(b => b.departamento))];
+        const departamentos = [...new Set(bonificacoesDept.map(b => b["Departamento"]))];
         
         html += '<div class="departamentos-grid">';
         departamentos.forEach(dept => {
-          const bonusDept = bonificacoesDept.filter(b => b.departamento === dept).slice(0, 3);
+          const bonusDept = bonificacoesDept.filter(b => b["Departamento"] === dept).slice(0, 3);
           
           html += '<div class="departamento-section">';
           html += `<div class="departamento-header">${dept}</div>`;
@@ -307,23 +375,29 @@
           
           bonusDept.forEach((bonus, idx) => {
             const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
-              .find(f => f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula);
-            const score = funcionario ? (funcionario["Score"] || funcionario.score_formatado || '0.00') : '0.00';
-            const medalha = idx === 0 ? '1º' : idx === 1 ? '2º' : '3º';
+              .find(f => f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]);
+            
+            const score = bonus["Score"] || '0.00';
+            const conceito = funcionario ? (funcionario["Conceito (1-5 Likert)"] || '—') : '—';
+            const habilidade = funcionario ? (funcionario["Habilidade (1-5 Likert)"] || '—') : '—';
+            const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
+            const medalha = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
             
             html += `
               <div style="background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid ${idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <div style="font-weight: bold; font-size: 1.1em;">${medalha} - ${bonus.nome_completo}</div>
+                  <div style="font-weight: bold; font-size: 1.1em;">${medalha} ${bonus["Nome Completo"]}</div>
                   <div style="background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">Score: ${score}</div>
                 </div>
                 <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
-                  Posição no Dept: ${bonus.posicao_departamento}º | Posição Geral: ${bonus.posicao_geral}º
+                  Posição no Dept: ${bonus["Posição"]}º | Cargo: ${bonus["Cargo"] || '—'}
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85em;">
-                  <div style="margin-bottom: 6px;"><strong>Item:</strong> ${bonus.opcao_item || 'Não definido'}</div>
-                  <div style="margin-bottom: 6px;"><strong>Viagem:</strong> ${bonus.opcao_viagem || 'Não definido'}</div>
-                  <div><strong>Bônus:</strong> ${bonus.opcao_bonus_salarial || 'Não definido'}</div>
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                    <div><strong>Conceito</strong><br>${conceito}/5</div>
+                    <div><strong>Habilidade</strong><br>${habilidade}/5</div>
+                    <div><strong>Atitude</strong><br>${atitude}/5</div>
+                  </div>
                 </div>
               </div>`;
           });
@@ -345,144 +419,18 @@
       document.getElementById(tabId).classList.add('active');
     }
 
-    function criarGrupoCenario(cenario, dados, bonificacoesGeral, bonificacoesDept) {
-      const grupo = document.createElement('div');
-      grupo.className = 'cenario-grupo';
-      const titulo = document.createElement('div');
-      titulo.className = 'cenario-titulo';
-      
-      const totalBonif = (bonificacoesGeral?.length || 0) + (bonificacoesDept?.length || 0);
-      titulo.textContent = `${cenario} (${dados.length} funcionários | ${totalBonif} bonificações)`;
-      
-      const botoes = document.createElement('div');
-      botoes.className = 'cenario-botoes';
-      
-      const btnDashboard = document.createElement('button');
-      btnDashboard.textContent = `Dashboard`;
-      btnDashboard.onclick = () => mostrarDashboard(cenario, dados, bonificacoesGeral);
-      
-      const btnDados = document.createElement('button');
-      btnDados.textContent = `Funcionários`;
-      btnDados.onclick = () => prepararTabela(dados, cenario);
-      
-      const btnBonificacoes = document.createElement('button');
-      btnBonificacoes.className = 'btn-bonificacoes';
-      btnBonificacoes.textContent = `Bonificações`;
-      btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoesGeral, bonificacoesDept, cenario);
-      
-      botoes.appendChild(btnDashboard);
-      botoes.appendChild(btnDados);
-      botoes.appendChild(btnBonificacoes);
-      grupo.appendChild(titulo);
-      grupo.appendChild(botoes);
-      return grupo;
-    }
-
-    fetch("https://iafyt5.app.n8n.cloud/webhook/relatorios")
-      .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`); return res.json(); })
-      .then(data => {
-        statusContainer.innerHTML = '';
-        dadosCompletos = data;
-        const relatorios = data.relatorios || {};
-        const bonificacoes = data.bonificacoes || {};
-        const bonificacoesDept = data.bonificacoes_por_departamento || {};
-        
-        let dadosPresentes = false;
-        for (const cenario in relatorios) {
-          const dados = relatorios[cenario];
-          if (Array.isArray(dados) && dados.length > 0) {
-            dadosPresentes = true;
-            const bonifGeral = bonificacoes[cenario] || [];
-            const bonifDept = bonificacoesDept[cenario] || [];
-            const grupo = criarGrupoCenario(cenario, dados, bonifGeral, bonifDept);
-            botoesRelatorios.appendChild(grupo);
-          }
-        }
-        if (!dadosPresentes) {
-          statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
-        } else {
-          statusContainer.innerHTML = `<div class="success">Relatórios carregados!</div>`;
-        }
-      })
-      .catch(error => {
-        console.error('Erro ao carregar relatórios:', error);
-        statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
-      });
-
-    const dashboardContainer = document.getElementById("dashboardContainer");
-    const dashboardResumo = document.getElementById("dashboardResumo");
-
-    const charts = { chartFuncionarios: null, chartBonificacoes: null, chartScore: null, chartScoreRange: null, chartTempo: null, chartCompetencias: null };
-    function safeDestroy(id) { if (charts[id]) { charts[id].destroy(); charts[id] = null; } }
-
-    function toNumberScore(v) {
-      if (v === undefined || v === null) return NaN;
-      if (typeof v === 'number') return v;
-      if (typeof v === 'string') {
-        let s = v.replace('%', '').trim();
-        if (s.includes(',')) {
-          if (s.includes('.') && s.lastIndexOf('.') < s.lastIndexOf(',')) {
-            s = s.replace(/\./g, '');
-          }
-          s = s.replace(',', '.');
-        } else if (s.includes('.')) {
-          const pontos = s.split('.');
-          if (pontos.length > 2 || (pontos.length === 2 && pontos[1].length > 2)) {
-            s = s.replace(/\./g, '');
-          }
-        }
-        const n = parseFloat(s);
-        return isNaN(n) ? NaN : n;
-      }
-      return NaN;
-    }
-
-    function estatisticas(arr) {
-      const a = arr.filter(x => Number.isFinite(x)).sort((x,y)=>x-y);
-      const n = a.length;
-      const media = n ? a.reduce((s,v)=>s+v,0)/n : 0;
-      const mediana = n ? (n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2) : 0;
-      const min = n ? a[0] : 0;
-      const max = n ? a[n-1] : 0;
-      const vari = n ? a.reduce((s,v)=>s+(v-media)**2,0)/n : 0;
-      const desvio = Math.sqrt(vari);
-      return { n, media, mediana, min, max, desvio };
-    }
-
-    function binScores(values, bins = 10) {
-      const arr = values.filter(Number.isFinite);
-      if (!arr.length) return { labels: [], counts: [] };
-      const min = Math.min(...arr);
-      const max = Math.max(...arr);
-      const step = (max - min) / bins || 1;
-      const counts = new Array(bins).fill(0);
-      const labels = [];
-      for (let i=0;i<bins;i++) {
-        const a = min + i*step;
-        const b = i === bins-1 ? max : min + (i+1)*step;
-        labels.push(`${a.toFixed(1)}–${b.toFixed(1)}`);
-      }
-      arr.forEach(v => {
-        let idx = Math.floor((v - min) / step);
-        if (idx >= bins) idx = bins-1;
-        if (idx < 0) idx = 0;
-        counts[idx]++;
-      });
-      return { labels, counts };
-    }
-
     function mostrarDashboard(nomeCenario, dados, bonificacoes) {
       ocultarTodosConteudos();
-      dashboardContainer.style.display = "block";
+      document.getElementById('dashboardContainer').style.display = "block";
 
       const dadosProc = processarDados(dados);
 
       const scores = dadosProc.map(f => toNumberScore(f["Score"])).filter(Number.isFinite);
       const { n, media, mediana, max, desvio } = estatisticas(scores);
 
-      const depsTop = new Set((bonificacoes || []).map(b => (b.departamento || 'Não informado')));
+      const depsTop = new Set((bonificacoes || []).map(b => (b["Departamento"] || 'Não informado')));
 
-      dashboardResumo.innerHTML = `
+      document.getElementById('dashboardResumo').innerHTML = `
         <div class="stat-item">
           <div class="stat-number">${nomeCenario}</div>
           <div class="stat-label">Cenário</div>
@@ -515,7 +463,7 @@
 
       const mediasPorDepMap = new Map();
       dadosProc.forEach(f => {
-        const dep = f["Departamento"] || f["departamento"] || "Não informado";
+        const dep = f["Departamento"] || "Não informado";
         const sc = toNumberScore(f["Score"]);
         if (!Number.isFinite(sc)) return;
         if (!mediasPorDepMap.has(dep)) mediasPorDepMap.set(dep, { soma: 0, qtd: 0 });
@@ -536,13 +484,13 @@
             backgroundColor: "#e07b3c"
           }]
         },
-        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 5 } } }
+        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Média de Score por Departamento" } }, scales: { y: { beginAtZero: true, max: 5 } } }
       });
 
       const top = dadosProc
         .map(f => ({
-          nome: f["Nome Completo"] || f["nome_completo"] || f["Matrícula"] || "—",
-          dep: f["Departamento"] || f["departamento"] || "Não informado",
+          nome: f["Nome Completo"] || f["Matrícula"] || "—",
+          dep: f["Departamento"] || "Não informado",
           score: toNumberScore(f["Score"]) || 0
         }))
         .sort((a,b)=>b.score-a.score)
@@ -559,7 +507,7 @@
             backgroundColor: "#4caf50"
           }]
         },
-        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 5 } } }
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Top 10 Funcionários por Score" } }, scales: { x: { beginAtZero: true, max: 5 } } }
       });
 
       const { labels: binLabels, counts } = binScores(scores, 10);
@@ -567,12 +515,12 @@
       charts.chartScore = new Chart(document.getElementById("chartScore"), {
         type: "bar",
         data: { labels: binLabels, datasets: [{ label: "Distribuição de Scores", data: counts, backgroundColor: "#2196f3" }] },
-        options: { responsive: true, plugins: { legend: { display: false } } }
+        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Distribuição de Scores" } } }
       });
 
       const variabilidadeData = depLabels.map(dep => {
         const scoresNoDep = dadosProc
-          .filter(f => (f["Departamento"] || f["departamento"] || "Não informado") === dep)
+          .filter(f => (f["Departamento"] || "Não informado") === dep)
           .map(f => toNumberScore(f["Score"]))
           .filter(Number.isFinite)
           .sort((a,b)=>a-b);
@@ -659,7 +607,7 @@
       });
 
       const tempoData = dadosProc.map(f => {
-        const admissao = f["Data de Admissão"] || f["data_admissao"] || "";
+        const admissao = f["Data de Admissão"] || "";
         let anosNaCasa = 0;
         
         if (admissao) {
@@ -737,7 +685,7 @@
 
       const top3Competencias = (bonificacoes || []).slice(0, 3).map((bonus, idx) => {
         const funcionario = dadosProc.find(f => 
-          f["Nome Completo"] === bonus.nome_completo || f["Matrícula"] === bonus.matricula
+          f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]
         );
         
         if (!funcionario) return null;
@@ -783,6 +731,70 @@
         }
       });
     }
+
+    function criarGrupoCenario(cenario, dados, bonificacoesGeral, bonificacoesDept) {
+      const grupo = document.createElement('div');
+      grupo.className = 'cenario-grupo';
+      const titulo = document.createElement('div');
+      titulo.className = 'cenario-titulo';
+      
+      const totalBonif = (bonificacoesGeral?.length || 0) + (bonificacoesDept?.length || 0);
+      titulo.textContent = `${cenario} (${dados.length} funcionários | ${totalBonif} bonificações)`;
+      
+      const botoes = document.createElement('div');
+      botoes.className = 'cenario-botoes';
+      
+      const btnDashboard = document.createElement('button');
+      btnDashboard.textContent = `Dashboard`;
+      btnDashboard.onclick = () => mostrarDashboard(cenario, dados, bonificacoesGeral);
+      
+      const btnDados = document.createElement('button');
+      btnDados.textContent = `Funcionários`;
+      btnDados.onclick = () => prepararTabela(dados, cenario);
+      
+      const btnBonificacoes = document.createElement('button');
+      btnBonificacoes.className = 'btn-bonificacoes';
+      btnBonificacoes.textContent = `Bonificações`;
+      btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoesGeral, bonificacoesDept, cenario);
+      
+      botoes.appendChild(btnDashboard);
+      botoes.appendChild(btnDados);
+      botoes.appendChild(btnBonificacoes);
+      grupo.appendChild(titulo);
+      grupo.appendChild(botoes);
+      return grupo;
+    }
+
+    fetch("https://iafyt5.app.n8n.cloud/webhook/relatorios")
+      .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`); return res.json(); })
+      .then(data => {
+        statusContainer.innerHTML = '';
+        dadosCompletos = data;
+        const relatorios = data.relatorios || {};
+        const bonificacoes = data.bonificacoes || {};
+        const bonificacoesDept = data.bonificacoes_por_departamento || {};
+        
+        let dadosPresentes = false;
+        for (const cenario in relatorios) {
+          const dados = relatorios[cenario];
+          if (Array.isArray(dados) && dados.length > 0) {
+            dadosPresentes = true;
+            const bonifGeral = bonificacoes[cenario] || [];
+            const bonifDept = bonificacoesDept[cenario] || [];
+            const grupo = criarGrupoCenario(cenario, dados, bonifGeral, bonifDept);
+            botoesRelatorios.appendChild(grupo);
+          }
+        }
+        if (!dadosPresentes) {
+          statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
+        } else {
+          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método CHA ativo.</div>`;
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao carregar relatórios:', error);
+        statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
+      });
   </script>
 </body>
 </html>
