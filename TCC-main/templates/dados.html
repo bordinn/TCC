@@ -326,6 +326,16 @@
           const habilidade = funcionario ? (funcionario["Habilidade (1-5 Likert)"] || '—') : '—';
           const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
           
+          // Dados da IA Gemini (se disponíveis)
+          const bonificacaoSugerida = bonus["Bonificação Sugerida"] || null;
+          const justificativaIA = bonus["Justificativa"] || null;
+          const valorSugerido = bonus["Valor Sugerido (R$)"] || null;
+          const categoria = bonus["Categoria"] || null;
+          const pesoPos = bonus["Peso Posição"] || null;
+          const hobby1 = bonus["Hobby 1"] || funcionario?.["Hobby 1"] || null;
+          const hobby2 = bonus["Hobby 2"] || funcionario?.["Hobby 2"] || null;
+          const hobby3 = bonus["Hobby 3"] || funcionario?.["Hobby 3"] || null;
+          
           const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
           const posicaoTexto = index === 0 ? '1º Lugar' : index === 1 ? '2º Lugar' : '3º Lugar';
           
@@ -352,8 +362,44 @@
                   <span class="cha-valor">${atitude}</span>
                 </div>
                 <div class="justificativa">Selecionado pelo método CHA com base em excelência nos três pilares avaliados</div>
-              </div>
-            </div>`;
+              </div>`;
+          
+          // Seção de Bonificação Personalizada por IA
+          if (bonificacaoSugerida && justificativaIA) {
+            const hobbies = [hobby1, hobby2, hobby3].filter(h => h && h.trim());
+            const hobbiesTexto = hobbies.length > 0 ? hobbies.join(', ') : 'Não informado';
+            
+            html += `
+              <div class="cha-scores" style="margin-top: 15px; border-top: 2px solid #e07b3c;">
+                <h4 style="color: #e07b3c; display: flex; align-items: center; gap: 8px;">
+                  <span>🎁</span> Bonificação Personalizada por IA
+                </h4>
+                <div style="background: #fff; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                  <div style="font-weight: bold; color: #333; font-size: 1.05em; margin-bottom: 8px;">
+                    ${bonificacaoSugerida}
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <span style="background: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9em; font-weight: 600;">
+                      R$ ${valorSugerido ? valorSugerido.toFixed(2) : '0.00'}
+                    </span>
+                    <span style="background: #e8f5e8; color: #28a745; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">
+                      ${categoria}
+                    </span>
+                  </div>
+                </div>
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 0 6px 6px 0; margin-bottom: 10px;">
+                  <div style="font-size: 0.85em; color: #856404;">
+                    <strong>Justificativa:</strong> ${justificativaIA}
+                  </div>
+                </div>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.85em;">
+                  <strong style="color: #666;">Hobbies:</strong> ${hobbiesTexto}
+                  ${pesoPos ? `<br><strong style="color: #666;">Peso aplicado:</strong> ${(pesoPos * 100).toFixed(0)}% (${posicaoTexto})` : ''}
+                </div>
+              </div>`;
+          }
+          
+          html += `</div>`;
         });
         html += '</div>';
       }
@@ -383,6 +429,16 @@
             const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
             const medalha = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
             
+            // Dados da IA Gemini
+            const bonificacaoSugerida = bonus["Bonificação Sugerida"] || null;
+            const justificativaIA = bonus["Justificativa"] || null;
+            const valorSugerido = bonus["Valor Sugerido (R$)"] || null;
+            const categoria = bonus["Categoria"] || null;
+            const pesoPos = bonus["Peso Posição"] || null;
+            const hobby1 = bonus["Hobby 1"] || funcionario?.["Hobby 1"] || null;
+            const hobby2 = bonus["Hobby 2"] || funcionario?.["Hobby 2"] || null;
+            const hobby3 = bonus["Hobby 3"] || funcionario?.["Hobby 3"] || null;
+            
             html += `
               <div style="background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid ${idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32'};">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -392,14 +448,51 @@
                 <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
                   Posição no Dept: ${bonus["Posição"]}º | Cargo: ${bonus["Cargo"] || '—'}
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85em;">
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85em; margin-bottom: 12px;">
                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
                     <div><strong>Conceito</strong><br>${conceito}/5</div>
                     <div><strong>Habilidade</strong><br>${habilidade}/5</div>
                     <div><strong>Atitude</strong><br>${atitude}/5</div>
                   </div>
-                </div>
-              </div>`;
+                </div>`;
+            
+            // Seção de Bonificação Personalizada por IA
+            if (bonificacaoSugerida && justificativaIA) {
+              const hobbies = [hobby1, hobby2, hobby3].filter(h => h && h.trim());
+              const hobbiesTexto = hobbies.length > 0 ? hobbies.join(', ') : 'Não informado';
+              const posicaoTexto = idx === 0 ? '1º Lugar' : idx === 1 ? '2º Lugar' : '3º Lugar';
+              
+              html += `
+                <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; border-top: 2px solid #e07b3c;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #e07b3c; font-weight: 600; font-size: 0.95em;">
+                    <span>🎁</span> Bonificação Personalizada por IA
+                  </div>
+                  <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                    <div style="font-weight: bold; color: #333; font-size: 0.95em; margin-bottom: 6px;">
+                      ${bonificacaoSugerida}
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                      <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">
+                        R$ ${valorSugerido ? valorSugerido.toFixed(2) : '0.00'}
+                      </span>
+                      <span style="background: #e8f5e8; color: #28a745; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">
+                        ${categoria}
+                      </span>
+                      ${pesoPos ? `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">Peso: ${(pesoPos * 100).toFixed(0)}%</span>` : ''}
+                    </div>
+                  </div>
+                  <div style="background: #fff3cd; border-left: 3px solid #ffc107; padding: 8px; border-radius: 0 4px 4px 0; margin-bottom: 8px;">
+                    <div style="font-size: 0.8em; color: #856404;">
+                      <strong>Justificativa:</strong> ${justificativaIA}
+                    </div>
+                  </div>
+                  <div style="background: white; padding: 8px; border-radius: 4px; font-size: 0.8em; color: #666;">
+                    <strong>Hobbies:</strong> ${hobbiesTexto}
+                  </div>
+                </div>`;
+            }
+            
+            html += `</div>`;
           });
           
           html += '</div></div>';
@@ -771,8 +864,8 @@
         statusContainer.innerHTML = '';
         dadosCompletos = data;
         const relatorios = data.relatorios || {};
-        const bonificacoes = data.bonificacoes || {};
-        const bonificacoesDept = data.bonificacoes_por_departamento || {};
+        const bonificacoes = data.bonificacoes_com_hobbies || data.bonificacoes || {};
+        const bonificacoesDept = data.bonificacoes_dept_com_hobbies || data.bonificacoes_por_departamento || {};
         
         let dadosPresentes = false;
         for (const cenario in relatorios) {
@@ -788,7 +881,9 @@
         if (!dadosPresentes) {
           statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
         } else {
-          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método CHA ativo.</div>`;
+          const temIA = data.bonificacoes_com_hobbies || data.bonificacoes_dept_com_hobbies;
+          const msgIA = temIA ? ' | <span style="color: #28a745;">✓ Análise de IA ativa</span>' : '';
+          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método CHA ativo.${msgIA}</div>`;
         }
       })
       .catch(error => {
