@@ -261,11 +261,17 @@
         console.log('📤 Enviando arquivo para processamento...');
         const startTime = Date.now();
 
-        // AGUARDAR a resposta completa do workflow
+        // AGUARDAR a resposta completa do workflow (TIMEOUT AUMENTADO)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutos
+        
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
-          body: formData
+          body: formData,
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
         console.log(`⏱️ Tempo total de processamento: ${elapsedTime}s`);
