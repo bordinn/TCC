@@ -6,6 +6,65 @@
   <title>FYT – Upload</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='icons/732220.png') }}">
+  <style>
+    .progress-container {
+      width: 100%;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      margin-top: 15px;
+      overflow: hidden;
+      display: none;
+      height: 30px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(135deg, #e07b3c 0%, #cf6a2b 100%);
+      text-align: center;
+      line-height: 30px;
+      color: white;
+      font-weight: bold;
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .countdown {
+      font-size: 1.3em;
+      color: #e07b3c;
+      font-weight: bold;
+      margin-top: 15px;
+      text-align: center;
+    }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #e07b3c;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .processing-info {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      display: none;
+    }
+    .processing-info h4 {
+      margin: 0 0 10px 0;
+      color: #856404;
+    }
+    .processing-info ul {
+      margin: 5px 0;
+      padding-left: 20px;
+      color: #856404;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -36,7 +95,26 @@
       Enviar Arquivo
     </button>
 
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+
+    <div class="processing-info" id="processingInfo">
+      <h4>⚙️ Processamento em andamento...</h4>
+      <ul>
+        <li>✓ Lendo dados da planilha</li>
+        <li>✓ Calculando scores CHA</li>
+        <li>✓ Identificando Top Performers</li>
+        <li>🎁 Analisando hobbies com IA Gemini</li>
+        <li>💾 Gerando relatórios personalizados</li>
+      </ul>
+      <p style="margin: 10px 0 0 0; font-style: italic;">Isso pode levar até 1 minuto...</p>
+    </div>
+
     <div id="mensagem" style="margin-top: 15px; color: red;"></div>
+    <div id="countdown" class="countdown"></div>
   </div>
 
   <script>
@@ -68,38 +146,97 @@
 
     document.getElementById("botaoEnviar").addEventListener("click", async function () {
       const mensagem = document.getElementById("mensagem");
+      const botao = document.getElementById("botaoEnviar");
+      const progressContainer = document.getElementById("progressContainer");
+      const progressBar = document.getElementById("progressBar");
+      const spinner = document.getElementById("spinner");
+      const processingInfo = document.getElementById("processingInfo");
+      const countdown = document.getElementById("countdown");
+      
       mensagem.style.color = 'red';
       mensagem.textContent = "";
+      countdown.textContent = "";
 
       if (!arquivoSelecionado) {
         mensagem.textContent = "Nenhum arquivo foi selecionado.";
         return;
       }
 
+      // Desabilitar botão e mostrar progresso
+      botao.disabled = true;
+      botao.style.opacity = '0.6';
+      botao.style.cursor = 'not-allowed';
+      progressContainer.style.display = 'block';
+      spinner.style.display = 'block';
+      processingInfo.style.display = 'block';
+
+      // Simulação de progresso
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 85) progress = 85; // Deixa em 85% até confirmar sucesso
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+      }, 2000);
+
       try {
         const formData = new FormData();
         formData.append('file', arquivoSelecionado);
         formData.append('area', document.getElementById("areaSelect").value);
+
+        console.log('📤 Enviando arquivo para processamento...');
 
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
           body: formData
         });
 
+        // Parar simulação de progresso
+        clearInterval(progressInterval);
+
         if (!resposta.ok) {
           throw new Error("Erro ao enviar para o workflow do n8n");
         }
 
+        // Sucesso - completar barra de progresso
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100% - Concluído!';
+        spinner.style.display = 'none';
+        processingInfo.style.display = 'none';
+
         mensagem.style.color = 'green';
-        mensagem.textContent = "Arquivo enviado com sucesso! Redirecionando...";
-        setTimeout(() => {
-          window.location.href = "dados";
-        }, 4000);
+        mensagem.textContent = "✅ Arquivo processado com sucesso! Análise de IA concluída.";
+
+        console.log('✅ Processamento concluído. Iniciando redirecionamento...');
+
+        // Countdown de 3 segundos
+        let timeLeft = 3;
+        const countdownInterval = setInterval(() => {
+          if (timeLeft > 0) {
+            countdown.textContent = `Redirecionando em ${timeLeft}...`;
+            timeLeft--;
+          } else {
+            clearInterval(countdownInterval);
+            console.log('🔄 Redirecionando para dados.html com timestamp...');
+            // Adiciona timestamp para forçar reload dos dados
+            window.location.href = `dados?t=${Date.now()}`;
+          }
+        }, 1000);
 
       } catch (erro) {
-        console.error(erro);
+        console.error('❌ Erro no upload:', erro);
+        clearInterval(progressInterval);
+        
+        // Resetar UI
+        progressContainer.style.display = 'none';
+        spinner.style.display = 'none';
+        processingInfo.style.display = 'none';
+        botao.disabled = false;
+        botao.style.opacity = '1';
+        botao.style.cursor = 'pointer';
+        
         mensagem.style.color = 'red';
-        mensagem.textContent = "Falha ao enviar o arquivo para o workflow.";
+        mensagem.textContent = "❌ Falha ao enviar o arquivo para o workflow. Tente novamente.";
       }
     });
   </script>

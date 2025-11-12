@@ -125,7 +125,8 @@
     </table>
   </div>
 
-  <div style="position: fixed; bottom: 20px; right: 20px;">
+  <div style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button onclick="location.reload()" class="voltar-botao" style="background-color: #28a745;">🔄 Atualizar Dados</button>
     <button onclick="window.location.href = 'upload.html'" class="voltar-botao">Voltar ao upload</button>
   </div>
 
@@ -863,9 +864,18 @@
       .then(data => {
         statusContainer.innerHTML = '';
         dadosCompletos = data;
+        
+        // PRIORIZAR dados com hobbies
         const relatorios = data.relatorios || {};
         const bonificacoes = data.bonificacoes_com_hobbies || data.bonificacoes || {};
         const bonificacoesDept = data.bonificacoes_dept_com_hobbies || data.bonificacoes_por_departamento || {};
+        
+        console.log('🔍 Debug - Dados recebidos:', {
+          temRelatorios: !!data.relatorios,
+          temBonificacoesComHobbies: !!data.bonificacoes_com_hobbies,
+          temBonificacoesDeptComHobbies: !!data.bonificacoes_dept_com_hobbies,
+          cenarios: Object.keys(bonificacoes)
+        });
         
         let dadosPresentes = false;
         for (const cenario in relatorios) {
@@ -874,15 +884,25 @@
             dadosPresentes = true;
             const bonifGeral = bonificacoes[cenario] || [];
             const bonifDept = bonificacoesDept[cenario] || [];
+            
+            console.log(`📊 Cenário: ${cenario}`, {
+              funcionarios: dados.length,
+              bonificacoesGeral: bonifGeral.length,
+              bonificacoesDept: bonifDept.length,
+              temHobbies: bonifGeral[0]?.["Bonificação Sugerida"] ? true : false
+            });
+            
             const grupo = criarGrupoCenario(cenario, dados, bonifGeral, bonifDept);
             botoesRelatorios.appendChild(grupo);
           }
         }
+        
         if (!dadosPresentes) {
           statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
         } else {
           const temIA = data.bonificacoes_com_hobbies || data.bonificacoes_dept_com_hobbies;
-          const msgIA = temIA ? ' | <span style="color: #28a745;">✓ Análise de IA ativa</span>' : '';
+          const qtdComIA = temIA ? Object.values(bonificacoes).reduce((acc, arr) => acc + arr.filter(b => b["Bonificação Sugerida"]).length, 0) : 0;
+          const msgIA = qtdComIA > 0 ? ` | <span style="color: #28a745;">✓ ${qtdComIA} análises de IA ativas</span>` : '';
           statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método CHA ativo.${msgIA}</div>`;
         }
       })
