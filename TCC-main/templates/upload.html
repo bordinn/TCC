@@ -64,6 +64,23 @@
       padding-left: 20px;
       color: #856404;
     }
+    .processing-step {
+      margin: 5px 0;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .processing-step.active {
+      background: #fff3cd;
+      font-weight: bold;
+    }
+    .processing-step.done {
+      background: #d4edda;
+      color: #155724;
+    }
   </style>
 </head>
 <body>
@@ -103,14 +120,32 @@
 
     <div class="processing-info" id="processingInfo">
       <h4>⚙️ Processamento em andamento...</h4>
-      <ul>
-        <li>✓ Lendo dados da planilha</li>
-        <li>✓ Calculando scores CHA</li>
-        <li>✓ Identificando Top Performers</li>
-        <li>🎁 Analisando hobbies com IA Gemini</li>
-        <li>💾 Gerando relatórios personalizados</li>
-      </ul>
-      <p style="margin: 10px 0 0 0; font-style: italic;">Isso pode levar até 1 minuto...</p>
+      <div id="processingSteps">
+        <div class="processing-step" data-step="1">
+          <span>⏳</span> Enviando arquivo...
+        </div>
+        <div class="processing-step" data-step="2">
+          <span>⏳</span> Lendo dados da planilha
+        </div>
+        <div class="processing-step" data-step="3">
+          <span>⏳</span> Calculando scores CHA
+        </div>
+        <div class="processing-step" data-step="4">
+          <span>⏳</span> Identificando Top Performers
+        </div>
+        <div class="processing-step" data-step="5">
+          <span>⏳</span> Analisando hobbies com IA Gemini
+        </div>
+        <div class="processing-step" data-step="6">
+          <span>⏳</span> Gerando relatórios personalizados
+        </div>
+        <div class="processing-step" data-step="7">
+          <span>⏳</span> Salvando no GitHub Gist
+        </div>
+      </div>
+      <p style="margin: 15px 0 0 0; font-style: italic; text-align: center;">
+        ⚠️ <strong>Aguarde!</strong> Isso pode levar até 2 minutos...
+      </p>
     </div>
 
     <div id="mensagem" style="margin-top: 15px; color: red;"></div>
@@ -144,6 +179,21 @@
       arquivoSelecionado = file;
     });
 
+    function updateStep(stepNumber, status) {
+      const step = document.querySelector(`[data-step="${stepNumber}"]`);
+      if (!step) return;
+
+      step.classList.remove('active', 'done');
+      
+      if (status === 'active') {
+        step.classList.add('active');
+        step.querySelector('span').textContent = '⚙️';
+      } else if (status === 'done') {
+        step.classList.add('done');
+        step.querySelector('span').textContent = '✅';
+      }
+    }
+
     document.getElementById("botaoEnviar").addEventListener("click", async function () {
       const mensagem = document.getElementById("mensagem");
       const botao = document.getElementById("botaoEnviar");
@@ -170,14 +220,38 @@
       spinner.style.display = 'block';
       processingInfo.style.display = 'block';
 
-      // Simulação de progresso
-      let progress = 0;
-      const progressInterval = setInterval(() => {
-        progress += Math.random() * 10;
-        if (progress > 85) progress = 85; // Deixa em 85% até confirmar sucesso
-        progressBar.style.width = progress + '%';
-        progressBar.textContent = Math.round(progress) + '%';
-      }, 2000);
+      // Simulação de progresso com etapas
+      let currentStep = 1;
+      updateStep(1, 'active');
+
+      const stepTimings = [
+        { step: 1, delay: 500, progress: 5 },    // Enviando
+        { step: 2, delay: 2000, progress: 15 },  // Lendo CSV
+        { step: 3, delay: 3000, progress: 30 },  // Calculando scores
+        { step: 4, delay: 5000, progress: 45 },  // Top Performers
+        { step: 5, delay: 30000, progress: 70 }, // IA Gemini (mais lento)
+        { step: 6, delay: 3000, progress: 85 },  // Gerando relatórios
+        { step: 7, delay: 2000, progress: 95 }   // Salvando
+      ];
+
+      let stepIndex = 0;
+      const stepInterval = setInterval(() => {
+        if (stepIndex < stepTimings.length) {
+          const timing = stepTimings[stepIndex];
+          
+          if (currentStep > 1) {
+            updateStep(currentStep - 1, 'done');
+          }
+          
+          currentStep = timing.step;
+          updateStep(currentStep, 'active');
+          
+          progressBar.style.width = timing.progress + '%';
+          progressBar.textContent = timing.progress + '%';
+          
+          stepIndex++;
+        }
+      }, 5000); // Atualiza a cada 5 segundos
 
       try {
         const formData = new FormData();
@@ -185,27 +259,50 @@
         formData.append('area', document.getElementById("areaSelect").value);
 
         console.log('📤 Enviando arquivo para processamento...');
+        const startTime = Date.now();
 
+        // AGUARDAR a resposta completa do workflow
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
           body: formData
         });
 
+        const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`⏱️ Tempo total de processamento: ${elapsedTime}s`);
+
         // Parar simulação de progresso
-        clearInterval(progressInterval);
+        clearInterval(stepInterval);
 
         if (!resposta.ok) {
-          throw new Error("Erro ao enviar para o workflow do n8n");
+          throw new Error(`Erro HTTP ${resposta.status}: ${resposta.statusText}`);
         }
 
-        // Sucesso - completar barra de progresso
+        // Tentar parsear resposta JSON
+        let resultado;
+        try {
+          resultado = await resposta.json();
+          console.log('📊 Resultado do processamento:', resultado);
+        } catch (e) {
+          console.log('⚠️ Resposta não é JSON, assumindo sucesso');
+          resultado = { sucesso: true };
+        }
+
+        // Marcar todas as etapas como concluídas
+        for (let i = 1; i <= 7; i++) {
+          updateStep(i, 'done');
+        }
+
+        // Completar barra de progresso
         progressBar.style.width = '100%';
         progressBar.textContent = '100% - Concluído!';
         spinner.style.display = 'none';
-        processingInfo.style.display = 'none';
+
+        // Verificar se houve análise de IA
+        const temIA = resultado.estatisticas_hobbies?.total_analisados > 0;
+        const msgIA = temIA ? ` | 🤖 ${resultado.estatisticas_hobbies.total_analisados} análises de IA concluídas!` : '';
 
         mensagem.style.color = 'green';
-        mensagem.textContent = "✅ Arquivo processado com sucesso! Análise de IA concluída.";
+        mensagem.textContent = `✅ Arquivo processado com sucesso em ${elapsedTime}s!${msgIA}`;
 
         console.log('✅ Processamento concluído. Iniciando redirecionamento...');
 
@@ -217,15 +314,14 @@
             timeLeft--;
           } else {
             clearInterval(countdownInterval);
-            console.log('🔄 Redirecionando para dados.html com timestamp...');
-            // Adiciona timestamp para forçar reload dos dados
+            console.log('🔄 Redirecionando para dados.html...');
             window.location.href = `dados?t=${Date.now()}`;
           }
         }, 1000);
 
       } catch (erro) {
         console.error('❌ Erro no upload:', erro);
-        clearInterval(progressInterval);
+        clearInterval(stepInterval);
         
         // Resetar UI
         progressContainer.style.display = 'none';
@@ -235,8 +331,14 @@
         botao.style.opacity = '1';
         botao.style.cursor = 'pointer';
         
+        // Resetar etapas
+        document.querySelectorAll('.processing-step').forEach(step => {
+          step.classList.remove('active', 'done');
+          step.querySelector('span').textContent = '⏳';
+        });
+        
         mensagem.style.color = 'red';
-        mensagem.textContent = "❌ Falha ao enviar o arquivo para o workflow. Tente novamente.";
+        mensagem.textContent = `❌ Falha ao processar: ${erro.message}. Tente novamente.`;
       }
     });
   </script>
