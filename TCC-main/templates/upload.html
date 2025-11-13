@@ -168,7 +168,7 @@
         </div>
       </div>
       <p style="margin: 15px 0 0 0; font-style: italic; text-align: center;">
-        ⚠️ <strong>Aguarde!</strong> Isso pode levar até 2 minutos...
+        ⚠️ <strong>Aguarde!</strong> Isso pode levar até 3 minutos...
       </p>
     </div>
 
@@ -248,19 +248,19 @@
             <span class="stat-value">${stats.total_analisados || 0} funcionários</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">🤖 IA Groq (Sucesso):</span>
-            <span class="stat-value">${stats.analises_ia_sucesso || 0}</span>
+            <span class="stat-label">✅ Sucesso (IA):</span>
+            <span class="stat-value">${stats.total_sucesso || 0}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">⚠️ Sem Hobbies:</span>
-            <span class="stat-value">${stats.sem_hobbies_csv || 0}</span>
+            <span class="stat-label">⚠️ Erros:</span>
+            <span class="stat-value">${stats.total_erros || 0}</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">💰 Valor Total Sugerido:</span>
             <span class="stat-value">R$ ${(stats.valor_total_sugerido || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">✅ Taxa de Sucesso:</span>
+            <span class="stat-label">📈 Taxa de Sucesso:</span>
             <span class="stat-value">${stats.taxa_sucesso || '0%'}</span>
           </div>
         `;
@@ -308,18 +308,18 @@
       spinner.style.display = 'block';
       processingInfo.style.display = 'block';
 
-      // Simulação de progresso
+      // Simulação de progresso visual
       let currentStep = 1;
       updateStep(1, 'active');
 
       const stepTimings = [
-        { step: 1, progress: 5 },    // Enviando
-        { step: 2, progress: 15 },   // Lendo CSV
-        { step: 3, progress: 30 },   // Calculando scores
-        { step: 4, progress: 45 },   // Top Performers
-        { step: 5, progress: 70 },   // IA Groq
-        { step: 6, progress: 85 },   // Gerando relatórios
-        { step: 7, progress: 95 }    // Salvando
+        { step: 1, progress: 10, time: 3000 },   // 3s - Upload
+        { step: 2, progress: 20, time: 5000 },   // 5s - Leitura CSV
+        { step: 3, progress: 35, time: 8000 },   // 8s - Cálculo scores
+        { step: 4, progress: 50, time: 10000 },  // 10s - Top Performers
+        { step: 5, progress: 75, time: 60000 },  // 60s - IA Groq (LONGO!)
+        { step: 6, progress: 90, time: 70000 },  // 70s - Relatórios
+        { step: 7, progress: 98, time: 80000 }   // 80s - Salvando
       ];
 
       let stepIndex = 0;
@@ -339,7 +339,7 @@
           
           stepIndex++;
         }
-      }, 6000); // Atualiza a cada 6 segundos
+      }, 10000); // Atualiza a cada 10 segundos
 
       try {
         const formData = new FormData();
@@ -349,7 +349,7 @@
         console.log('📤 Enviando arquivo para processamento...');
         const startTime = Date.now();
 
-        // AGUARDAR resposta completa (timeout de 3 minutos)
+        // ⚠️ CRÍTICO: AGUARDAR resposta completa (timeout de 3 minutos)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutos
         
@@ -363,54 +363,75 @@
         clearInterval(stepInterval);
 
         const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`⏱️ Tempo total: ${elapsedTime}s`);
+        console.log(`⏱️ Tempo total de processamento: ${elapsedTime}s`);
 
         if (!resposta.ok) {
           throw new Error(`HTTP ${resposta.status}: ${resposta.statusText}`);
         }
 
-        // Parsear resposta
+        // ✅ AGUARDAR E PARSEAR RESPOSTA COMPLETA
         let resultado;
         try {
           resultado = await resposta.json();
-          console.log('📊 Resultado:', resultado);
+          console.log('📊 Resultado completo recebido:', resultado);
         } catch (e) {
-          console.warn('⚠️ Resposta não é JSON');
-          resultado = { sucesso: true };
+          console.error('⚠️ Erro ao parsear JSON da resposta:', e);
+          throw new Error('Resposta inválida do servidor');
         }
 
-        // Marcar todas etapas concluídas
+        // Validar se o processamento foi concluído com sucesso
+        if (!resultado.sucesso) {
+          throw new Error(resultado.mensagem || 'Processamento falhou sem mensagem de erro');
+        }
+
+        // Verificar se os dados foram salvos no GitHub Gist
+        if (!resultado.gist_info || !resultado.gist_info.id) {
+          console.error('❌ ERRO: Dados não foram salvos no GitHub Gist');
+          console.error('Resultado recebido:', resultado);
+          throw new Error('Dados não foram salvos no GitHub Gist. Verifique o workflow N8N.');
+        }
+
+        console.log('✅ Gist salvo com sucesso! ID:', resultado.gist_info.id);
+        console.log('🔗 URL do Gist:', resultado.gist_info.url);
+
+        // Marcar todas etapas como concluídas
         for (let i = 1; i <= 7; i++) {
           updateStep(i, 'done');
         }
 
-        // Completar barra
+        // Completar barra de progresso
         progressBar.style.width = '100%';
         progressBar.textContent = '✅ Concluído!';
+        progressBar.style.background = 'linear-gradient(135deg, #28a745 0%, #20a038 100%)';
         spinner.style.display = 'none';
 
-        // Exibir estatísticas
-        if (resultado.sucesso && resultado.estatisticas_hobbies) {
+        // Exibir estatísticas detalhadas
+        if (resultado.estatisticas_hobbies) {
           exibirEstatisticas(resultado);
         }
 
-        // Mensagem de sucesso
+        // Mensagem de sucesso detalhada
         const totalAnalises = resultado.estatisticas_hobbies?.total_analisados || 0;
+        const totalSucesso = resultado.estatisticas_hobbies?.total_sucesso || 0;
         const taxaSucesso = resultado.estatisticas_hobbies?.taxa_sucesso || '0%';
+        const valorTotal = resultado.estatisticas_hobbies?.valor_total_sugerido || 0;
         
         mensagem.style.color = 'green';
         mensagem.innerHTML = `
-          ✅ <strong>Processamento concluído em ${elapsedTime}s!</strong><br>
-          🤖 ${totalAnalises} análises realizadas | Taxa de sucesso: ${taxaSucesso}
+          ✅ <strong>Processamento concluído com sucesso em ${elapsedTime}s!</strong><br>
+          🤖 ${totalAnalises} análises de IA realizadas (${totalSucesso} sucesso)<br>
+          📈 Taxa de sucesso: ${taxaSucesso}<br>
+          💰 Valor total sugerido: R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
+          📁 <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold;">Ver todos os relatórios no GitHub Gist</a>
         `;
 
-        console.log('✅ Sucesso! Redirecionando...');
+        console.log('✅ SUCESSO TOTAL! Dados confirmados no Gist. Preparando redirecionamento...');
 
-        // Countdown 5 segundos (tempo para ver estatísticas)
-        let timeLeft = 5;
+        // ⏰ Countdown para redirecionamento (dados estão salvos e confirmados!)
+        let timeLeft = 3;
         const countdownInterval = setInterval(() => {
           if (timeLeft > 0) {
-            countdown.textContent = `Redirecionando em ${timeLeft}...`;
+            countdown.textContent = `Redirecionando para visualização em ${timeLeft}s...`;
             timeLeft--;
           } else {
             clearInterval(countdownInterval);
@@ -420,10 +441,10 @@
         }, 1000);
 
       } catch (erro) {
-        console.error('❌ Erro:', erro);
+        console.error('❌ ERRO COMPLETO:', erro);
         clearInterval(stepInterval);
         
-        // Resetar UI
+        // Resetar UI em caso de erro
         progressContainer.style.display = 'none';
         spinner.style.display = 'none';
         processingInfo.style.display = 'none';
@@ -432,19 +453,36 @@
         botao.style.opacity = '1';
         botao.style.cursor = 'pointer';
         
-        // Resetar etapas
+        // Resetar etapas visuais
         document.querySelectorAll('.processing-step').forEach(step => {
           step.classList.remove('active', 'done');
           step.querySelector('span').textContent = '⏳';
         });
         
+        // Mensagem de erro detalhada
         let mensagemErro = erro.message;
+        let dicaErro = '';
+        
         if (erro.name === 'AbortError') {
-          mensagemErro = 'Timeout: processamento demorou mais de 3 minutos';
+          mensagemErro = 'Timeout: O processamento demorou mais de 3 minutos';
+          dicaErro = 'O arquivo pode ser muito grande ou a API de IA está lenta. Tente novamente.';
+        } else if (mensagemErro.includes('Gist')) {
+          dicaErro = 'Verifique se o workflow N8N está salvando os dados corretamente no GitHub Gist.';
+        } else if (mensagemErro.includes('HTTP')) {
+          dicaErro = 'Erro de comunicação com o servidor. Verifique sua conexão e tente novamente.';
+        } else {
+          dicaErro = 'Verifique se o arquivo CSV está no formato correto e tente novamente.';
         }
         
         mensagem.style.color = 'red';
-        mensagem.innerHTML = `❌ <strong>Falha ao processar:</strong> ${mensagemErro}<br>Tente novamente.`;
+        mensagem.innerHTML = `
+          ❌ <strong>Falha ao processar arquivo</strong><br>
+          <strong>Erro:</strong> ${mensagemErro}<br>
+          💡 <strong>Dica:</strong> ${dicaErro}<br>
+          <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #e07b3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            🔄 Tentar Novamente
+          </button>
+        `;
       }
     });
   </script>
