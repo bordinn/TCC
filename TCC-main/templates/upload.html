@@ -59,11 +59,6 @@
       margin: 0 0 10px 0;
       color: #856404;
     }
-    .processing-info ul {
-      margin: 5px 0;
-      padding-left: 20px;
-      color: #856404;
-    }
     .processing-step {
       margin: 5px 0;
       padding: 8px;
@@ -80,6 +75,35 @@
     .processing-step.done {
       background: #d4edda;
       color: #155724;
+    }
+    .stats-summary {
+      background: #e7f3ff;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      display: none;
+    }
+    .stats-summary h4 {
+      margin: 0 0 10px 0;
+      color: #0d47a1;
+    }
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #bbdefb;
+    }
+    .stat-item:last-child {
+      border-bottom: none;
+    }
+    .stat-label {
+      font-weight: 500;
+      color: #1976d2;
+    }
+    .stat-value {
+      font-weight: bold;
+      color: #0d47a1;
     }
   </style>
 </head>
@@ -134,7 +158,7 @@
           <span>⏳</span> Identificando Top Performers
         </div>
         <div class="processing-step" data-step="5">
-          <span>⏳</span> Analisando hobbies com IA Gemini
+          <span>⏳</span> Analisando hobbies com IA Groq
         </div>
         <div class="processing-step" data-step="6">
           <span>⏳</span> Gerando relatórios personalizados
@@ -146,6 +170,11 @@
       <p style="margin: 15px 0 0 0; font-style: italic; text-align: center;">
         ⚠️ <strong>Aguarde!</strong> Isso pode levar até 2 minutos...
       </p>
+    </div>
+
+    <div class="stats-summary" id="statsSummary">
+      <h4>📊 Resumo do Processamento</h4>
+      <div id="statsContent"></div>
     </div>
 
     <div id="mensagem" style="margin-top: 15px; color: red;"></div>
@@ -194,6 +223,63 @@
       }
     }
 
+    function exibirEstatisticas(resultado) {
+      const statsContent = document.getElementById('statsContent');
+      const statsSummary = document.getElementById('statsSummary');
+      
+      let html = '';
+      
+      // Resumo Geral
+      if (resultado.resumo) {
+        html += `
+          <div class="stat-item">
+            <span class="stat-label">📁 Cenários Processados:</span>
+            <span class="stat-value">${resultado.resumo.total_cenarios || 0}</span>
+          </div>
+        `;
+      }
+      
+      // Estatísticas de Hobbies
+      if (resultado.estatisticas_hobbies) {
+        const stats = resultado.estatisticas_hobbies;
+        html += `
+          <div class="stat-item">
+            <span class="stat-label">👥 Total Analisado:</span>
+            <span class="stat-value">${stats.total_analisados || 0} funcionários</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">🤖 IA Groq (Sucesso):</span>
+            <span class="stat-value">${stats.analises_ia_sucesso || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">⚠️ Sem Hobbies:</span>
+            <span class="stat-value">${stats.sem_hobbies_csv || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">💰 Valor Total Sugerido:</span>
+            <span class="stat-value">R$ ${(stats.valor_total_sugerido || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">✅ Taxa de Sucesso:</span>
+            <span class="stat-value">${stats.taxa_sucesso || '0%'}</span>
+          </div>
+        `;
+      }
+      
+      // Info do Gist
+      if (resultado.gist_info && resultado.gist_info.url) {
+        html += `
+          <div class="stat-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #2196F3;">
+            <span class="stat-label">🔗 GitHub Gist:</span>
+            <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold;">Acessar Relatórios</a>
+          </div>
+        `;
+      }
+      
+      statsContent.innerHTML = html;
+      statsSummary.style.display = 'block';
+    }
+
     document.getElementById("botaoEnviar").addEventListener("click", async function () {
       const mensagem = document.getElementById("mensagem");
       const botao = document.getElementById("botaoEnviar");
@@ -202,10 +288,12 @@
       const spinner = document.getElementById("spinner");
       const processingInfo = document.getElementById("processingInfo");
       const countdown = document.getElementById("countdown");
+      const statsSummary = document.getElementById("statsSummary");
       
       mensagem.style.color = 'red';
       mensagem.textContent = "";
       countdown.textContent = "";
+      statsSummary.style.display = 'none';
 
       if (!arquivoSelecionado) {
         mensagem.textContent = "Nenhum arquivo foi selecionado.";
@@ -220,18 +308,18 @@
       spinner.style.display = 'block';
       processingInfo.style.display = 'block';
 
-      // Simulação de progresso com etapas
+      // Simulação de progresso
       let currentStep = 1;
       updateStep(1, 'active');
 
       const stepTimings = [
-        { step: 1, delay: 500, progress: 5 },    // Enviando
-        { step: 2, delay: 2000, progress: 15 },  // Lendo CSV
-        { step: 3, delay: 3000, progress: 30 },  // Calculando scores
-        { step: 4, delay: 5000, progress: 45 },  // Top Performers
-        { step: 5, delay: 30000, progress: 70 }, // IA Gemini (mais lento)
-        { step: 6, delay: 3000, progress: 85 },  // Gerando relatórios
-        { step: 7, delay: 2000, progress: 95 }   // Salvando
+        { step: 1, progress: 5 },    // Enviando
+        { step: 2, progress: 15 },   // Lendo CSV
+        { step: 3, progress: 30 },   // Calculando scores
+        { step: 4, progress: 45 },   // Top Performers
+        { step: 5, progress: 70 },   // IA Groq
+        { step: 6, progress: 85 },   // Gerando relatórios
+        { step: 7, progress: 95 }    // Salvando
       ];
 
       let stepIndex = 0;
@@ -251,7 +339,7 @@
           
           stepIndex++;
         }
-      }, 5000); // Atualiza a cada 5 segundos
+      }, 6000); // Atualiza a cada 6 segundos
 
       try {
         const formData = new FormData();
@@ -261,9 +349,9 @@
         console.log('📤 Enviando arquivo para processamento...');
         const startTime = Date.now();
 
-        // AGUARDAR a resposta completa do workflow (TIMEOUT AUMENTADO)
+        // AGUARDAR resposta completa (timeout de 3 minutos)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutos
+        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutos
         
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
@@ -272,48 +360,54 @@
         });
         
         clearTimeout(timeoutId);
-
-        const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`⏱️ Tempo total de processamento: ${elapsedTime}s`);
-
-        // Parar simulação de progresso
         clearInterval(stepInterval);
 
+        const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`⏱️ Tempo total: ${elapsedTime}s`);
+
         if (!resposta.ok) {
-          throw new Error(`Erro HTTP ${resposta.status}: ${resposta.statusText}`);
+          throw new Error(`HTTP ${resposta.status}: ${resposta.statusText}`);
         }
 
-        // Tentar parsear resposta JSON
+        // Parsear resposta
         let resultado;
         try {
           resultado = await resposta.json();
-          console.log('📊 Resultado do processamento:', resultado);
+          console.log('📊 Resultado:', resultado);
         } catch (e) {
-          console.log('⚠️ Resposta não é JSON, assumindo sucesso');
+          console.warn('⚠️ Resposta não é JSON');
           resultado = { sucesso: true };
         }
 
-        // Marcar todas as etapas como concluídas
+        // Marcar todas etapas concluídas
         for (let i = 1; i <= 7; i++) {
           updateStep(i, 'done');
         }
 
-        // Completar barra de progresso
+        // Completar barra
         progressBar.style.width = '100%';
-        progressBar.textContent = '100% - Concluído!';
+        progressBar.textContent = '✅ Concluído!';
         spinner.style.display = 'none';
 
-        // Verificar se houve análise de IA
-        const temIA = resultado.estatisticas_hobbies?.total_analisados > 0;
-        const msgIA = temIA ? ` | 🤖 ${resultado.estatisticas_hobbies.total_analisados} análises de IA concluídas!` : '';
+        // Exibir estatísticas
+        if (resultado.sucesso && resultado.estatisticas_hobbies) {
+          exibirEstatisticas(resultado);
+        }
 
+        // Mensagem de sucesso
+        const totalAnalises = resultado.estatisticas_hobbies?.total_analisados || 0;
+        const taxaSucesso = resultado.estatisticas_hobbies?.taxa_sucesso || '0%';
+        
         mensagem.style.color = 'green';
-        mensagem.textContent = `✅ Arquivo processado com sucesso em ${elapsedTime}s!${msgIA}`;
+        mensagem.innerHTML = `
+          ✅ <strong>Processamento concluído em ${elapsedTime}s!</strong><br>
+          🤖 ${totalAnalises} análises realizadas | Taxa de sucesso: ${taxaSucesso}
+        `;
 
-        console.log('✅ Processamento concluído. Iniciando redirecionamento...');
+        console.log('✅ Sucesso! Redirecionando...');
 
-        // Countdown de 3 segundos
-        let timeLeft = 3;
+        // Countdown 5 segundos (tempo para ver estatísticas)
+        let timeLeft = 5;
         const countdownInterval = setInterval(() => {
           if (timeLeft > 0) {
             countdown.textContent = `Redirecionando em ${timeLeft}...`;
@@ -326,13 +420,14 @@
         }, 1000);
 
       } catch (erro) {
-        console.error('❌ Erro no upload:', erro);
+        console.error('❌ Erro:', erro);
         clearInterval(stepInterval);
         
         // Resetar UI
         progressContainer.style.display = 'none';
         spinner.style.display = 'none';
         processingInfo.style.display = 'none';
+        statsSummary.style.display = 'none';
         botao.disabled = false;
         botao.style.opacity = '1';
         botao.style.cursor = 'pointer';
@@ -343,8 +438,13 @@
           step.querySelector('span').textContent = '⏳';
         });
         
+        let mensagemErro = erro.message;
+        if (erro.name === 'AbortError') {
+          mensagemErro = 'Timeout: processamento demorou mais de 3 minutos';
+        }
+        
         mensagem.style.color = 'red';
-        mensagem.textContent = `❌ Falha ao processar: ${erro.message}. Tente novamente.`;
+        mensagem.innerHTML = `❌ <strong>Falha ao processar:</strong> ${mensagemErro}<br>Tente novamente.`;
       }
     });
   </script>
