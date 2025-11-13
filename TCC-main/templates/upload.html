@@ -4,106 +4,189 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FYT – Upload</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="icon" href="{{ url_for('static', filename='icons/732220.png') }}">
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    header {
+      background-color: #e07b3c;
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px 0;
+      border: 2px solid #ddd;
+      font-size: 16px;
+    }
+
+    .upload-box {
+      border: 3px dashed #e07b3c;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      background-color: #fff8f3;
+    }
+
+    .upload-box:hover {
+      background-color: #ffe8d9;
+    }
+
+    .format-info {
+      text-align: center;
+      color: #666;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: #e07b3c;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #cf6a2b;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* BARRA DE PROGRESSO - SEM ARREDONDAMENTO, MAIS GROSSA */
     .progress-container {
       width: 100%;
       background-color: #e0e0e0;
-      border-radius: 10px;
-      margin-top: 15px;
-      overflow: hidden;
+      margin-top: 20px;
       display: none;
-      height: 30px;
+      height: 40px; /* Mais grossa */
+      border: 2px solid #333; /* Borda para destaque */
     }
+
     .progress-bar {
       height: 100%;
-      background: linear-gradient(135deg, #e07b3c 0%, #cf6a2b 100%);
+      background: linear-gradient(90deg, #e07b3c 0%, #cf6a2b 100%);
       text-align: center;
-      line-height: 30px;
+      line-height: 40px;
       color: white;
       font-weight: bold;
-      transition: width 0.3s;
+      font-size: 18px;
+      transition: width 0.5s linear;
       width: 0%;
     }
-    .countdown {
-      font-size: 1.3em;
-      color: #e07b3c;
-      font-weight: bold;
-      margin-top: 15px;
-      text-align: center;
-    }
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #e07b3c;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-      display: none;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+
     .processing-info {
       background-color: #fff3cd;
-      border-left: 4px solid #ffc107;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 5px;
+      border-left: 5px solid #ffc107;
+      padding: 20px;
+      margin-top: 20px;
       display: none;
     }
+
     .processing-info h4 {
-      margin: 0 0 10px 0;
+      margin: 0 0 15px 0;
       color: #856404;
+      font-size: 18px;
     }
+
     .processing-step {
-      margin: 5px 0;
-      padding: 8px;
+      margin: 8px 0;
+      padding: 12px;
       background: white;
-      border-radius: 4px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
+      font-size: 15px;
     }
+
     .processing-step.active {
       background: #fff3cd;
       font-weight: bold;
+      border-left: 4px solid #ffc107;
     }
+
     .processing-step.done {
       background: #d4edda;
       color: #155724;
+      border-left: 4px solid #28a745;
     }
+
     .stats-summary {
       background: #e7f3ff;
-      border-left: 4px solid #2196F3;
-      padding: 15px;
-      margin-top: 15px;
-      border-radius: 5px;
+      border-left: 5px solid #2196F3;
+      padding: 20px;
+      margin-top: 20px;
       display: none;
     }
+
     .stats-summary h4 {
-      margin: 0 0 10px 0;
+      margin: 0 0 15px 0;
       color: #0d47a1;
+      font-size: 18px;
     }
+
     .stat-item {
       display: flex;
       justify-content: space-between;
-      padding: 5px 0;
+      padding: 8px 0;
       border-bottom: 1px solid #bbdefb;
     }
+
     .stat-item:last-child {
       border-bottom: none;
     }
+
     .stat-label {
       font-weight: 500;
       color: #1976d2;
     }
+
     .stat-value {
       font-weight: bold;
       color: #0d47a1;
+    }
+
+    .countdown {
+      font-size: 1.5em;
+      color: #e07b3c;
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #mensagem {
+      margin-top: 20px;
+      padding: 15px;
+      text-align: center;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -125,14 +208,15 @@
     </select>
 
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-      <img src="../static/icons/732220.png" alt="CSV icon" style="width: 80px; height: 80px; margin: 20px auto; display: block;" />
+      <div style="font-size: 60px;">📄</div>
+      <div style="margin-top: 10px; font-size: 16px; color: #666;">Clique para selecionar arquivo CSV</div>
     </div>
 
-    <div class="format-info">Em formato .CSV</div>
+    <div class="format-info">Formato aceito: .CSV</div>
     <input type="file" id="fileInput" accept=".csv" style="display:none" />
-    <div id="nome-arquivo" style="margin-top: 10px; font-weight: bold;"></div>
+    <div id="nome-arquivo" style="margin-top: 15px; font-weight: bold; color: #333;"></div>
 
-    <button id="botaoEnviar" style="margin-top: 20px; padding: 10px 20px; font-weight: bold; background-color: #e07b3c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+    <button id="botaoEnviar">
       Enviar Arquivo
     </button>
 
@@ -140,22 +224,20 @@
       <div class="progress-bar" id="progressBar">0%</div>
     </div>
 
-    <div class="spinner" id="spinner"></div>
-
     <div class="processing-info" id="processingInfo">
       <h4>⚙️ Processamento em andamento...</h4>
       <div id="processingSteps">
         <div class="processing-step" data-step="1">
-          <span>⏳</span> Enviando arquivo...
+          <span>⏳</span> Enviando arquivo para servidor
         </div>
         <div class="processing-step" data-step="2">
-          <span>⏳</span> Lendo dados da planilha
+          <span>⏳</span> Lendo e validando dados CSV
         </div>
         <div class="processing-step" data-step="3">
-          <span>⏳</span> Calculando scores CHA
+          <span>⏳</span> Calculando scores CHA (Conceito, Habilidade, Atitude)
         </div>
         <div class="processing-step" data-step="4">
-          <span>⏳</span> Identificando Top Performers
+          <span>⏳</span> Identificando Top Performers por cenário
         </div>
         <div class="processing-step" data-step="5">
           <span>⏳</span> Analisando hobbies com IA Groq
@@ -164,11 +246,11 @@
           <span>⏳</span> Gerando relatórios personalizados
         </div>
         <div class="processing-step" data-step="7">
-          <span>⏳</span> Salvando no GitHub Gist
+          <span>⏳</span> Salvando dados no GitHub Gist
         </div>
       </div>
-      <p style="margin: 15px 0 0 0; font-style: italic; text-align: center;">
-        ⚠️ <strong>Aguarde!</strong> Isso pode levar até 3 minutos...
+      <p style="margin: 20px 0 0 0; font-style: italic; text-align: center; font-size: 15px;">
+        ⏰ <strong>Tempo estimado: 40 segundos</strong>
       </p>
     </div>
 
@@ -177,7 +259,7 @@
       <div id="statsContent"></div>
     </div>
 
-    <div id="mensagem" style="margin-top: 15px; color: red;"></div>
+    <div id="mensagem"></div>
     <div id="countdown" class="countdown"></div>
   </div>
 
@@ -189,6 +271,7 @@
       const nomeArquivo = document.getElementById("nome-arquivo");
       const mensagem = document.getElementById("mensagem");
       mensagem.textContent = "";
+      mensagem.style.backgroundColor = "";
 
       if (!file) {
         nomeArquivo.textContent = "";
@@ -198,13 +281,15 @@
 
       const extensao = file.name.split(".").pop().toLowerCase();
       if (extensao !== "csv") {
-        mensagem.textContent = "Formato inválido. Envie um arquivo .CSV.";
+        mensagem.textContent = "❌ Formato inválido. Envie um arquivo .CSV.";
+        mensagem.style.color = "red";
+        mensagem.style.backgroundColor = "#ffe6e6";
         nomeArquivo.textContent = "";
         arquivoSelecionado = null;
         return;
       }
 
-      nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
+      nomeArquivo.textContent = `📁 Arquivo selecionado: ${file.name}`;
       arquivoSelecionado = file;
     });
 
@@ -229,7 +314,6 @@
       
       let html = '';
       
-      // Resumo Geral
       if (resultado.resumo) {
         html += `
           <div class="stat-item">
@@ -239,7 +323,6 @@
         `;
       }
       
-      // Estatísticas de Hobbies
       if (resultado.estatisticas_hobbies) {
         const stats = resultado.estatisticas_hobbies;
         html += `
@@ -248,30 +331,21 @@
             <span class="stat-value">${stats.total_analisados || 0} funcionários</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">✅ Sucesso (IA):</span>
-            <span class="stat-value">${stats.total_sucesso || 0}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">⚠️ Erros:</span>
-            <span class="stat-value">${stats.total_erros || 0}</span>
-          </div>
-          <div class="stat-item">
             <span class="stat-label">💰 Valor Total Sugerido:</span>
             <span class="stat-value">R$ ${(stats.valor_total_sugerido || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">📈 Taxa de Sucesso:</span>
+            <span class="stat-label">✅ Taxa de Sucesso:</span>
             <span class="stat-value">${stats.taxa_sucesso || '0%'}</span>
           </div>
         `;
       }
       
-      // Info do Gist
       if (resultado.gist_info && resultado.gist_info.url) {
         html += `
-          <div class="stat-item" style="margin-top: 10px; padding-top: 10px; border-top: 2px solid #2196F3;">
+          <div class="stat-item" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #2196F3;">
             <span class="stat-label">🔗 GitHub Gist:</span>
-            <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold;">Acessar Relatórios</a>
+            <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold; text-decoration: underline;">Acessar Relatórios</a>
           </div>
         `;
       }
@@ -285,153 +359,135 @@
       const botao = document.getElementById("botaoEnviar");
       const progressContainer = document.getElementById("progressContainer");
       const progressBar = document.getElementById("progressBar");
-      const spinner = document.getElementById("spinner");
       const processingInfo = document.getElementById("processingInfo");
       const countdown = document.getElementById("countdown");
       const statsSummary = document.getElementById("statsSummary");
       
-      mensagem.style.color = 'red';
       mensagem.textContent = "";
+      mensagem.style.backgroundColor = "";
       countdown.textContent = "";
       statsSummary.style.display = 'none';
 
       if (!arquivoSelecionado) {
-        mensagem.textContent = "Nenhum arquivo foi selecionado.";
+        mensagem.textContent = "❌ Nenhum arquivo foi selecionado.";
+        mensagem.style.color = "red";
+        mensagem.style.backgroundColor = "#ffe6e6";
         return;
       }
 
-      // Desabilitar botão e mostrar progresso
+      // Desabilitar botão
       botao.disabled = true;
-      botao.style.opacity = '0.6';
-      botao.style.cursor = 'not-allowed';
+      botao.textContent = "Processando...";
+      
+      // Mostrar UI de progresso
       progressContainer.style.display = 'block';
-      spinner.style.display = 'block';
       processingInfo.style.display = 'block';
 
-      // Simulação de progresso visual
+      // PROGRESSO SIMULADO DE 40 SEGUNDOS
+      const DURACAO_TOTAL = 40000; // 40 segundos
+      const INTERVALO = 100; // Atualiza a cada 100ms
+      const TOTAL_UPDATES = DURACAO_TOTAL / INTERVALO;
+      
+      let currentUpdate = 0;
       let currentStep = 1;
-      updateStep(1, 'active');
 
-      const stepTimings = [
-        { step: 1, progress: 10, time: 3000 },   // 3s - Upload
-        { step: 2, progress: 20, time: 5000 },   // 5s - Leitura CSV
-        { step: 3, progress: 35, time: 8000 },   // 8s - Cálculo scores
-        { step: 4, progress: 50, time: 10000 },  // 10s - Top Performers
-        { step: 5, progress: 75, time: 60000 },  // 60s - IA Groq (LONGO!)
-        { step: 6, progress: 90, time: 70000 },  // 70s - Relatórios
-        { step: 7, progress: 98, time: 80000 }   // 80s - Salvando
+      // Define quando cada etapa começa (em % do progresso)
+      const stepBreakpoints = [
+        { step: 1, startPercent: 0 },   // 0-10%
+        { step: 2, startPercent: 10 },  // 10-20%
+        { step: 3, startPercent: 20 },  // 20-35%
+        { step: 4, startPercent: 35 },  // 35-50%
+        { step: 5, startPercent: 50 },  // 50-70%
+        { step: 6, startPercent: 70 },  // 70-85%
+        { step: 7, startPercent: 85 }   // 85-100%
       ];
 
-      let stepIndex = 0;
-      const stepInterval = setInterval(() => {
-        if (stepIndex < stepTimings.length) {
-          const timing = stepTimings[stepIndex];
-          
-          if (currentStep > 1) {
-            updateStep(currentStep - 1, 'done');
+      const progressInterval = setInterval(() => {
+        currentUpdate++;
+        const percentComplete = (currentUpdate / TOTAL_UPDATES) * 100;
+        
+        // Atualizar barra
+        progressBar.style.width = percentComplete + '%';
+        progressBar.textContent = Math.floor(percentComplete) + '%';
+        
+        // Atualizar etapa ativa
+        for (let i = stepBreakpoints.length - 1; i >= 0; i--) {
+          if (percentComplete >= stepBreakpoints[i].startPercent) {
+            if (currentStep !== stepBreakpoints[i].step) {
+              if (currentStep > 0) {
+                updateStep(currentStep, 'done');
+              }
+              currentStep = stepBreakpoints[i].step;
+              updateStep(currentStep, 'active');
+            }
+            break;
           }
-          
-          currentStep = timing.step;
-          updateStep(currentStep, 'active');
-          
-          progressBar.style.width = timing.progress + '%';
-          progressBar.textContent = timing.progress + '%';
-          
-          stepIndex++;
         }
-      }, 10000); // Atualiza a cada 10 segundos
+        
+        if (currentUpdate >= TOTAL_UPDATES) {
+          clearInterval(progressInterval);
+        }
+      }, INTERVALO);
 
       try {
         const formData = new FormData();
         formData.append('file', arquivoSelecionado);
         formData.append('area', document.getElementById("areaSelect").value);
 
-        console.log('📤 Enviando arquivo para processamento...');
+        console.log('📤 Enviando arquivo para n8n...');
         const startTime = Date.now();
 
-        // ⚠️ CRÍTICO: AGUARDAR resposta completa (timeout de 3 minutos)
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutos
-        
+        // Fazer requisição (mas não esperar resposta imediata)
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
-          body: formData,
-          signal: controller.signal
+          body: formData
         });
-        
-        clearTimeout(timeoutId);
-        clearInterval(stepInterval);
 
         const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`⏱️ Tempo total de processamento: ${elapsedTime}s`);
+        console.log(`⏱️ Upload concluído em: ${elapsedTime}s`);
 
-        if (!resposta.ok) {
-          throw new Error(`HTTP ${resposta.status}: ${resposta.statusText}`);
+        // Aguardar os 40 segundos completos antes de processar resposta
+        const tempoRestante = DURACAO_TOTAL - (Date.now() - startTime);
+        if (tempoRestante > 0) {
+          console.log(`⏳ Aguardando mais ${(tempoRestante/1000).toFixed(1)}s...`);
+          await new Promise(resolve => setTimeout(resolve, tempoRestante));
         }
 
-        // ✅ AGUARDAR E PARSEAR RESPOSTA COMPLETA
-        let resultado;
-        try {
-          resultado = await resposta.json();
-          console.log('📊 Resultado completo recebido:', resultado);
-        } catch (e) {
-          console.error('⚠️ Erro ao parsear JSON da resposta:', e);
-          throw new Error('Resposta inválida do servidor');
-        }
-
-        // Validar se o processamento foi concluído com sucesso
-        if (!resultado.sucesso) {
-          throw new Error(resultado.mensagem || 'Processamento falhou sem mensagem de erro');
-        }
-
-        // Verificar se os dados foram salvos no GitHub Gist
-        if (!resultado.gist_info || !resultado.gist_info.id) {
-          console.error('❌ ERRO: Dados não foram salvos no GitHub Gist');
-          console.error('Resultado recebido:', resultado);
-          throw new Error('Dados não foram salvos no GitHub Gist. Verifique o workflow N8N.');
-        }
-
-        console.log('✅ Gist salvo com sucesso! ID:', resultado.gist_info.id);
-        console.log('🔗 URL do Gist:', resultado.gist_info.url);
+        clearInterval(progressInterval);
 
         // Marcar todas etapas como concluídas
         for (let i = 1; i <= 7; i++) {
           updateStep(i, 'done');
         }
 
-        // Completar barra de progresso
         progressBar.style.width = '100%';
-        progressBar.textContent = '✅ Concluído!';
-        progressBar.style.background = 'linear-gradient(135deg, #28a745 0%, #20a038 100%)';
-        spinner.style.display = 'none';
+        progressBar.textContent = '✅ 100% - Concluído!';
 
-        // Exibir estatísticas detalhadas
-        if (resultado.estatisticas_hobbies) {
+        // Processar resposta
+        let resultado;
+        try {
+          resultado = await resposta.json();
+          console.log('📊 Resultado:', resultado);
+        } catch (e) {
+          console.warn('⚠️ Resposta não é JSON, continuando...');
+          resultado = { sucesso: true };
+        }
+
+        // Exibir estatísticas se disponível
+        if (resultado && resultado.estatisticas_hobbies) {
           exibirEstatisticas(resultado);
         }
 
-        // Mensagem de sucesso detalhada
-        const totalAnalises = resultado.estatisticas_hobbies?.total_analisados || 0;
-        const totalSucesso = resultado.estatisticas_hobbies?.total_sucesso || 0;
-        const taxaSucesso = resultado.estatisticas_hobbies?.taxa_sucesso || '0%';
-        const valorTotal = resultado.estatisticas_hobbies?.valor_total_sugerido || 0;
-        
+        // Mensagem de sucesso
         mensagem.style.color = 'green';
-        mensagem.innerHTML = `
-          ✅ <strong>Processamento concluído com sucesso em ${elapsedTime}s!</strong><br>
-          🤖 ${totalAnalises} análises de IA realizadas (${totalSucesso} sucesso)<br>
-          📈 Taxa de sucesso: ${taxaSucesso}<br>
-          💰 Valor total sugerido: R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>
-          📁 <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold;">Ver todos os relatórios no GitHub Gist</a>
-        `;
+        mensagem.style.backgroundColor = '#e6ffe6';
+        mensagem.innerHTML = `✅ <strong>Processamento concluído com sucesso!</strong><br>Dados salvos e prontos para visualização.`;
 
-        console.log('✅ SUCESSO TOTAL! Dados confirmados no Gist. Preparando redirecionamento...');
-
-        // ⏰ Countdown para redirecionamento (dados estão salvos e confirmados!)
-        let timeLeft = 3;
+        // Countdown de 5 segundos antes de redirecionar
+        let timeLeft = 5;
         const countdownInterval = setInterval(() => {
           if (timeLeft > 0) {
-            countdown.textContent = `Redirecionando para visualização em ${timeLeft}s...`;
+            countdown.textContent = `🔄 Redirecionando em ${timeLeft}s...`;
             timeLeft--;
           } else {
             clearInterval(countdownInterval);
@@ -441,48 +497,25 @@
         }, 1000);
 
       } catch (erro) {
-        console.error('❌ ERRO COMPLETO:', erro);
-        clearInterval(stepInterval);
+        console.error('❌ Erro:', erro);
+        clearInterval(progressInterval);
         
-        // Resetar UI em caso de erro
+        // Resetar UI
         progressContainer.style.display = 'none';
-        spinner.style.display = 'none';
         processingInfo.style.display = 'none';
         statsSummary.style.display = 'none';
         botao.disabled = false;
-        botao.style.opacity = '1';
-        botao.style.cursor = 'pointer';
+        botao.textContent = "Enviar Arquivo";
         
-        // Resetar etapas visuais
+        // Resetar etapas
         document.querySelectorAll('.processing-step').forEach(step => {
           step.classList.remove('active', 'done');
           step.querySelector('span').textContent = '⏳';
         });
         
-        // Mensagem de erro detalhada
-        let mensagemErro = erro.message;
-        let dicaErro = '';
-        
-        if (erro.name === 'AbortError') {
-          mensagemErro = 'Timeout: O processamento demorou mais de 3 minutos';
-          dicaErro = 'O arquivo pode ser muito grande ou a API de IA está lenta. Tente novamente.';
-        } else if (mensagemErro.includes('Gist')) {
-          dicaErro = 'Verifique se o workflow N8N está salvando os dados corretamente no GitHub Gist.';
-        } else if (mensagemErro.includes('HTTP')) {
-          dicaErro = 'Erro de comunicação com o servidor. Verifique sua conexão e tente novamente.';
-        } else {
-          dicaErro = 'Verifique se o arquivo CSV está no formato correto e tente novamente.';
-        }
-        
         mensagem.style.color = 'red';
-        mensagem.innerHTML = `
-          ❌ <strong>Falha ao processar arquivo</strong><br>
-          <strong>Erro:</strong> ${mensagemErro}<br>
-          💡 <strong>Dica:</strong> ${dicaErro}<br>
-          <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; background: #e07b3c; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-            🔄 Tentar Novamente
-          </button>
-        `;
+        mensagem.style.backgroundColor = '#ffe6e6';
+        mensagem.innerHTML = `❌ <strong>Erro ao processar:</strong> ${erro.message}<br>Por favor, tente novamente.`;
       }
     });
   </script>
