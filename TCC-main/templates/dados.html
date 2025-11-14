@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FYT – Dados</title>
+  <title>FYT – Análise por Departamento</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f8f9fa; }
@@ -23,22 +23,16 @@
     .filtro-box button { padding: 10px 14px; background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; text-align: left; cursor: pointer; transition: background-color 0.2s; }
     .filtro-box button:hover { background-color: #e6e6e6; }
     .filtro-input { margin-top: 8px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; display: none; }
-    .cenario-grupo { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
-    .cenario-titulo { font-weight: 600; font-size: 16px; color: #333; }
-    .cenario-grupo button { padding: 8px 14px; background-color: #e07b3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; margin-left: 8px; }
-    .cenario-grupo button:hover { background-color: #cf6a2b; }
-    .cenario-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .departamento-grupo { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
+    .departamento-titulo { font-weight: 600; font-size: 16px; color: #333; }
+    .departamento-grupo button { padding: 8px 14px; background-color: #e07b3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; margin-left: 8px; }
+    .departamento-grupo button:hover { background-color: #cf6a2b; }
+    .departamento-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-bonificacoes { background-color: #28a745 !important; }
     .btn-bonificacoes:hover { background-color: #218838 !important; }
     .bonificacoes-container { background-color: #fff; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
-    .tabs-container { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-    .tab-button { padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; color: #666; }
-    .tab-button:hover { color: #e07b3c; }
-    .tab-button.active { color: #e07b3c; border-bottom-color: #e07b3c; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .podium-container { display: flex; justify-content: space-around; gap: 20px; margin-top: 20px; }
-    .posicao-card { flex: 1; background: #ffffff; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 4px solid; }
+    .podium-container { display: flex; justify-content: space-around; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+    .posicao-card { flex: 1; min-width: 280px; background: #ffffff; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 4px solid; }
     .posicao-card.primeiro { border-top-color: #ffd700; }
     .posicao-card.segundo { border-top-color: #c0c0c0; }
     .posicao-card.terceiro { border-top-color: #cd7f32; }
@@ -50,10 +44,17 @@
     .cha-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; }
     .cha-label { font-weight: 600; color: #e07b3c; }
     .cha-valor { font-weight: bold; color: #333; font-size: 1.1em; }
-    .justificativa { background-color: #e8f5e8; border-left: 4px solid #28a745; padding: 10px; margin-top: 12px; font-style: italic; font-size: 0.85em; border-radius: 0 6px 6px 0; }
-    .departamento-section { margin-bottom: 40px; }
-    .departamento-header { background: #e07b3c; color: white; padding: 15px 20px; border-radius: 10px 10px 0 0; font-size: 1.2em; font-weight: bold; text-align: center; margin-bottom: 0; }
-    .departamento-content { background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; border: 2px solid #667eea; border-top: none; }
+    .bonificacao-ia-container { margin-top: 15px; border-top: 2px solid #28a745; padding-top: 15px; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-radius: 8px; padding: 15px; }
+    .bonificacao-ia-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #2e7d32; font-weight: 600; }
+    .bonificacao-ia-titulo { font-size: 1.05em; font-weight: bold; color: #1b5e20; margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #4caf50; }
+    .bonificacao-ia-detalhes { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .bonificacao-valor { background: #4caf50; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 1.1em; display: inline-flex; align-items: center; gap: 5px; }
+    .bonificacao-categoria { background: #fff9c4; color: #f57f17; padding: 4px 12px; border-radius: 15px; font-weight: 600; font-size: 0.85em; border: 1px solid #fbc02d; }
+    .bonificacao-peso { background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 15px; font-weight: 600; font-size: 0.85em; border: 1px solid #64b5f6; }
+    .hobbies-container { background: white; padding: 12px; border-radius: 6px; margin-top: 10px; border: 1px solid #e0e0e0; }
+    .hobbies-titulo { font-weight: 600; color: #666; font-size: 0.85em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+    .hobby-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; margin-right: 6px; margin-bottom: 6px; }
+    .sem-hobbies { color: #999; font-style: italic; font-size: 0.85em; }
     .loading { text-align: center; color: #6b7280; font-style: italic; }
     .error { color: #dc2626; background-color: #fee2e2; padding: 12px; border-radius: 6px; margin: 10px 0; }
     .success { color: #15803d; background-color: #d1fae5; padding: 12px; border-radius: 6px; margin: 10px 0; }
@@ -61,47 +62,42 @@
     .resumo-bonificacoes { background: #ffffff; color: #333; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
     .resumo-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-top: 15px; }
     .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; }
-    .stat-number { font-size: 1.1em; font-weight: bold; margin-bottom: 5px; }
+    .stat-number { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; color: #e07b3c; }
     .stat-label { font-size: 0.9em; opacity: 0.7; }
     .metodo-badge { display: inline-block; background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; margin-left: 10px; }
-    .departamentos-grid { display: flex; flex-direction: column; gap: 20px; margin-top: 20px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+    .ia-badge { display: inline-block; background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; margin-left: 10px; animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
     @media (max-width: 768px) { 
       .podium-container { flex-direction: column; } 
-      .cenario-botoes { flex-direction: column; }
-      .tabs-container { flex-wrap: wrap; }
+      .departamento-botoes { flex-direction: column; }
     }
   </style>
 </head>
 <body>
   <header>
     <div>FYT – Find Your Talent</div>
-    <div>Resultados da Análise <span class="metodo-badge">Método CHA</span></div>
+    <div>
+      Análise por Departamento 
+      <span class="metodo-badge">Método CHA</span>
+      <span class="ia-badge">🤖 IA Ativa</span>
+    </div>
   </header>
 
   <div class="container">
-    <h2>Relatório da Análise</h2>
-    <div id="status-container"><div class="loading">Carregando relatórios...</div></div>
+    <h2>Relatório por Departamento</h2>
+    <div id="status-container"><div class="loading">Carregando departamentos...</div></div>
 
-    <div class="botoes-relatorios" id="botoesRelatorios"></div>
+    <div class="resumo-bonificacoes" id="resumoGeral" style="display: none;">
+      <h3>📊 Resumo Geral</h3>
+      <div class="resumo-stats" id="statsGerais"></div>
+    </div>
+
+    <div class="botoes-relatorios" id="botoesDepartamentos"></div>
 
     <div id="bonificacoesContainer" class="bonificacoes-container"></div>
-
-    <div id="dashboardContainer" style="display:none; margin-top:20px;">
-      <h2>Dashboard Analítica</h2>
-      <div class="resumo-bonificacoes">
-        <div class="resumo-stats" id="dashboardResumo"></div>
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px;">
-        <div><canvas id="chartFuncionarios"></canvas></div>
-        <div><canvas id="chartBonificacoes"></canvas></div>
-        <div><canvas id="chartScore"></canvas></div>
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:20px; margin-top:30px;">
-        <div><canvas id="chartScoreRange"></canvas></div>
-        <div><canvas id="chartTempo"></canvas></div>
-        <div><canvas id="chartCompetencias"></canvas></div>
-      </div>
-    </div>
 
     <div class="filtro-container" id="filtroContainer" style="display: none;">
       <h3>Filtros</h3>
@@ -110,9 +106,7 @@
         <div class="filtro-box"><button onclick="toggleInput('filtroScore')">Score</button><input type="text" id="filtroScore" class="filtro-input" placeholder="Digite o score..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroMatricula')">Matrícula</button><input type="text" id="filtroMatricula" class="filtro-input" placeholder="Digite a matrícula..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroNome')">Nome</button><input type="text" id="filtroNome" class="filtro-input" placeholder="Digite o nome..."></div>
-        <div class="filtro-box"><button onclick="toggleInput('filtroDepartamento')">Departamento</button><input type="text" id="filtroDepartamento" class="filtro-input" placeholder="Digite o departamento..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroCargo')">Cargo</button><input type="text" id="filtroCargo" class="filtro-input" placeholder="Digite o cargo..."></div>
-        <div class="filtro-box"><button onclick="toggleInput('filtroAdmissao')">Admissão</button><input type="text" id="filtroAdmissao" class="filtro-input" placeholder="Digite a data..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroConceito')">Conceito (CHA)</button><input type="text" id="filtroConceito" class="filtro-input" placeholder="Nota 1-5..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroHabilidade')">Habilidade (CHA)</button><input type="text" id="filtroHabilidade" class="filtro-input" placeholder="Nota 1-5..."></div>
         <div class="filtro-box"><button onclick="toggleInput('filtroAtitude')">Atitude (CHA)</button><input type="text" id="filtroAtitude" class="filtro-input" placeholder="Nota 1-5..."></div>
@@ -126,27 +120,27 @@
   </div>
 
   <div style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
-    <button onclick="location.reload()" class="voltar-botao" style="background-color: #28a745;">🔄 Atualizar Dados</button>
-    <button onclick="window.location.href = 'upload.html'" class="voltar-botao">Voltar ao upload</button>
+    <button onclick="location.reload()" class="voltar-botao" style="background-color: #28a745;">🔄 Atualizar</button>
+    <button onclick="window.location.href = 'upload.html'" class="voltar-botao">← Voltar</button>
   </div>
 
   <script>
     const tabela = document.getElementById("tabela-dados");
     const cabecalhoTabela = document.getElementById("cabecalho-tabela");
     const corpoTabela = document.getElementById("corpo-tabela");
-    const botoesRelatorios = document.getElementById("botoesRelatorios");
+    const botoesDepartamentos = document.getElementById("botoesDepartamentos");
     const statusContainer = document.getElementById("status-container");
     const filtroContainer = document.getElementById("filtroContainer");
     const bonificacoesContainer = document.getElementById("bonificacoesContainer");
+    const resumoGeral = document.getElementById("resumoGeral");
+    const statsGerais = document.getElementById("statsGerais");
 
     const filtros = {
       "Posição": document.getElementById("filtroPosicao"),
       "Score": document.getElementById("filtroScore"),
       "Matrícula": document.getElementById("filtroMatricula"),
       "Nome Completo": document.getElementById("filtroNome"),
-      "Departamento": document.getElementById("filtroDepartamento"),
       "Cargo": document.getElementById("filtroCargo"),
-      "Data de Admissão": document.getElementById("filtroAdmissao"),
       "Conceito (1-5 Likert)": document.getElementById("filtroConceito"),
       "Habilidade (1-5 Likert)": document.getElementById("filtroHabilidade"),
       "Atitude (1-5 Likert)": document.getElementById("filtroAtitude")
@@ -155,91 +149,9 @@
     let dadosCompletos = {};
     let dadosAtuais = [];
 
-    const charts = { 
-      chartFuncionarios: null, 
-      chartBonificacoes: null, 
-      chartScore: null, 
-      chartScoreRange: null, 
-      chartTempo: null, 
-      chartCompetencias: null 
-    };
-
-    function safeDestroy(id) { 
-      if (charts[id]) { 
-        charts[id].destroy(); 
-        charts[id] = null; 
-      } 
-    }
-
     function toggleInput(id) {
       const input = document.getElementById(id);
       input.style.display = input.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function processarDados(dados) {
-      return dados.map(item => {
-        const itemProcessado = { ...item };
-        if (itemProcessado.hasOwnProperty('posicao_no_ranking')) {
-          itemProcessado['Posição'] = itemProcessado.posicao_no_ranking;
-          delete itemProcessado.posicao_no_ranking;
-        }
-        if (itemProcessado.hasOwnProperty('score_formatado')) {
-          itemProcessado['Score'] = itemProcessado.score_formatado;
-          delete itemProcessado.score_formatado;
-        }
-        return itemProcessado;
-      });
-    }
-
-    function toNumberScore(v) {
-      if (v === undefined || v === null) return NaN;
-      if (typeof v === 'number') return v;
-      if (typeof v === 'string') {
-        let s = v.replace('%', '').trim();
-        if (s.includes(',')) {
-          if (s.includes('.') && s.lastIndexOf('.') < s.lastIndexOf(',')) {
-            s = s.replace(/\./g, '');
-          }
-          s = s.replace(',', '.');
-        }
-        const n = parseFloat(s);
-        return isNaN(n) ? NaN : n;
-      }
-      return NaN;
-    }
-
-    function estatisticas(arr) {
-      const a = arr.filter(x => Number.isFinite(x)).sort((x,y)=>x-y);
-      const n = a.length;
-      const media = n ? a.reduce((s,v)=>s+v,0)/n : 0;
-      const mediana = n ? (n%2? a[(n-1)/2] : (a[n/2-1]+a[n/2])/2) : 0;
-      const min = n ? a[0] : 0;
-      const max = n ? a[n-1] : 0;
-      const vari = n ? a.reduce((s,v)=>s+(v-media)**2,0)/n : 0;
-      const desvio = Math.sqrt(vari);
-      return { n, media, mediana, min, max, desvio };
-    }
-
-    function binScores(values, bins = 10) {
-      const arr = values.filter(Number.isFinite);
-      if (!arr.length) return { labels: [], counts: [] };
-      const min = Math.min(...arr);
-      const max = Math.max(...arr);
-      const step = (max - min) / bins || 1;
-      const counts = new Array(bins).fill(0);
-      const labels = [];
-      for (let i=0;i<bins;i++) {
-        const a = min + i*step;
-        const b = i === bins-1 ? max : min + (i+1)*step;
-        labels.push(`${a.toFixed(1)}–${b.toFixed(1)}`);
-      }
-      arr.forEach(v => {
-        let idx = Math.floor((v - min) / step);
-        if (idx >= bins) idx = bins-1;
-        if (idx < 0) idx = 0;
-        counts[idx]++;
-      });
-      return { labels, counts };
     }
 
     function renderizarTabela(dados) {
@@ -282,12 +194,11 @@
       tabela.style.display = 'none';
       filtroContainer.style.display = 'none';
       bonificacoesContainer.style.display = 'none';
-      document.getElementById('dashboardContainer').style.display = 'none';
     }
 
-    function prepararTabela(dados, nomeCenario) {
+    function prepararTabela(dados, nomeDepartamento) {
       ocultarTodosConteudos();
-      dadosAtuais = processarDados(dados);
+      dadosAtuais = dados;
       Object.values(filtros).forEach(input => {
         input.value = '';
         input.removeEventListener("input", aplicarFiltros);
@@ -296,562 +207,149 @@
       tabela.style.display = 'table';
       filtroContainer.style.display = 'block';
       const titulo = document.querySelector('h2');
-      titulo.textContent = `Relatório da Análise – ${nomeCenario}`;
+      titulo.textContent = `Funcionários – ${nomeDepartamento}`;
       renderizarTabela(dadosAtuais);
     }
 
-    function mostrarBonificacoes(bonificacoesGeral, bonificacoesDept, nomeCenario) {
+    function mostrarBonificacoes(bonificacoes, nomeDepartamento) {
       ocultarTodosConteudos();
       bonificacoesContainer.style.display = 'block';
       const titulo = document.querySelector('h2');
-      titulo.textContent = `Bonificações – ${nomeCenario}`;
+      titulo.textContent = `🏆 Top 3 – ${nomeDepartamento}`;
 
-      let html = `<h3>Bonificações - ${nomeCenario}</h3>`;
+      if (!bonificacoes || bonificacoes.length === 0) {
+        bonificacoesContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma bonificação disponível.</p>';
+        return;
+      }
+
+      let html = '<div class="podium-container">';
       
-      html += '<div class="tabs-container">';
-      html += '<button class="tab-button active" onclick="switchTab(\'tab-geral\')">Top 3 Geral</button>';
-      html += '<button class="tab-button" onclick="switchTab(\'tab-departamentos\')">Top 3 por Departamento</button>';
-      html += '</div>';
-
-      html += '<div id="tab-geral" class="tab-content active">';
-      if (!bonificacoesGeral || bonificacoesGeral.length === 0) {
-        html += '<p style="text-align: center; color: #666;">Nenhuma bonificação geral disponível.</p>';
-      } else {
-        html += '<div class="podium-container">';
-        bonificacoesGeral.slice(0, 3).forEach((bonus, index) => {
-          const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
-            .find(f => f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]);
-          
-          const score = bonus["Score"] || '0.00';
-          const conceito = funcionario ? (funcionario["Conceito (1-5 Likert)"] || '—') : '—';
-          const habilidade = funcionario ? (funcionario["Habilidade (1-5 Likert)"] || '—') : '—';
-          const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
-          
-          // Dados da IA Gemini (se disponíveis)
-          const bonificacaoSugerida = bonus["Bonificação Sugerida"] || null;
-          const justificativaIA = bonus["Justificativa"] || null;
-          const valorSugerido = bonus["Valor Sugerido (R$)"] || null;
-          const categoria = bonus["Categoria"] || null;
-          const pesoPos = bonus["Peso Posição"] || null;
-          const hobby1 = bonus["Hobby 1"] || funcionario?.["Hobby 1"] || null;
-          const hobby2 = bonus["Hobby 2"] || funcionario?.["Hobby 2"] || null;
-          const hobby3 = bonus["Hobby 3"] || funcionario?.["Hobby 3"] || null;
-          
-          const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
-          const posicaoTexto = index === 0 ? '1º Lugar' : index === 1 ? '2º Lugar' : '3º Lugar';
-          
-          html += `
-            <div class="posicao-card ${posicaoClass}">
-              <div class="medalha">${posicaoTexto}</div>
-              <div class="funcionario-nome">${bonus["Nome Completo"] || 'Nome não informado'}</div>
-              <div class="funcionario-info">
-                Score: ${score}<br>
-                ${bonus["Departamento"] || 'Departamento não informado'}
-              </div>
-              <div class="cha-scores">
-                <h4>Avaliações CHA (Método Likert 1-5)</h4>
-                <div class="cha-item">
-                  <span class="cha-label">Conceito (Conhecimento)</span>
-                  <span class="cha-valor">${conceito}</span>
-                </div>
-                <div class="cha-item">
-                  <span class="cha-label">Habilidade</span>
-                  <span class="cha-valor">${habilidade}</span>
-                </div>
-                <div class="cha-item">
-                  <span class="cha-label">Atitude</span>
-                  <span class="cha-valor">${atitude}</span>
-                </div>
-                <div class="justificativa">Selecionado pelo método CHA com base em excelência nos três pilares avaliados</div>
-              </div>`;
-          
-          // Seção de Bonificação Personalizada por IA
-          if (bonificacaoSugerida && justificativaIA) {
-            const hobbies = [hobby1, hobby2, hobby3].filter(h => h && h.trim());
-            const hobbiesTexto = hobbies.length > 0 ? hobbies.join(', ') : 'Não informado';
-            
-            html += `
-              <div class="cha-scores" style="margin-top: 15px; border-top: 2px solid #e07b3c;">
-                <h4 style="color: #e07b3c; display: flex; align-items: center; gap: 8px;">
-                  <span>🎁</span> Bonificação Personalizada por IA
-                </h4>
-                <div style="background: #fff; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
-                  <div style="font-weight: bold; color: #333; font-size: 1.05em; margin-bottom: 8px;">
-                    ${bonificacaoSugerida}
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <span style="background: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9em; font-weight: 600;">
-                      R$ ${valorSugerido ? valorSugerido.toFixed(2) : '0.00'}
-                    </span>
-                    <span style="background: #e8f5e8; color: #28a745; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">
-                      ${categoria}
-                    </span>
-                  </div>
-                </div>
-                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 0 6px 6px 0; margin-bottom: 10px;">
-                  <div style="font-size: 0.85em; color: #856404;">
-                    <strong>Justificativa:</strong> ${justificativaIA}
-                  </div>
-                </div>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.85em;">
-                  <strong style="color: #666;">Hobbies:</strong> ${hobbiesTexto}
-                  ${pesoPos ? `<br><strong style="color: #666;">Peso aplicado:</strong> ${(pesoPos * 100).toFixed(0)}% (${posicaoTexto})` : ''}
-                </div>
-              </div>`;
-          }
-          
-          html += `</div>`;
-        });
-        html += '</div>';
-      }
-      html += '</div>';
-
-      html += '<div id="tab-departamentos" class="tab-content">';
-      if (!bonificacoesDept || bonificacoesDept.length === 0) {
-        html += '<p style="text-align: center; color: #666;">Nenhuma bonificação por departamento disponível.</p>';
-      } else {
-        const departamentos = [...new Set(bonificacoesDept.map(b => b["Departamento"]))];
+      bonificacoes.slice(0, 3).forEach((bonus, index) => {
+        const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
+        const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+        const posicaoTexto = `${index + 1}º Lugar`;
         
-        html += '<div class="departamentos-grid">';
-        departamentos.forEach(dept => {
-          const bonusDept = bonificacoesDept.filter(b => b["Departamento"] === dept).slice(0, 3);
-          
-          html += '<div class="departamento-section">';
-          html += `<div class="departamento-header">${dept}</div>`;
-          html += '<div class="departamento-content">';
-          
-          bonusDept.forEach((bonus, idx) => {
-            const funcionario = (dadosCompletos.relatorios[nomeCenario] || [])
-              .find(f => f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]);
+        const score = bonus["Score"] || '0.00';
+        const conceito = bonus["Conceito"] || bonus["Conceito (1-5 Likert)"] || '—';
+        const habilidade = bonus["Habilidade"] || bonus["Habilidade (1-5 Likert)"] || '—';
+        const atitude = bonus["Atitude"] || bonus["Atitude (1-5 Likert)"] || '—';
+        
+        // Dados da IA
+        const bonificacaoSugerida = bonus["Bonificação Sugerida"] || bonus["BonificaÃ§Ã£o Sugerida"] || null;
+        const valorSugerido = bonus["Valor Sugerido (R$)"] || 0;
+        const categoria = bonus["Categoria"] || "Não categorizado";
+        const pesoPos = bonus["Peso Posição"] || bonus["Peso PosiÃ§Ã£o"] || null;
+        const descricaoPeso = bonus["Descrição Peso"] || bonus["DescriÃ§Ã£o Peso"] || "";
+        
+        const hobby1 = bonus["Hobby 1"] || "";
+        const hobby2 = bonus["Hobby 2"] || "";
+        const hobby3 = bonus["Hobby 3"] || "";
+        const hobbies = [hobby1, hobby2, hobby3].filter(h => h && h.trim() !== '' && h.toLowerCase() !== 'n/a');
+        
+        html += `
+          <div class="posicao-card ${posicaoClass}">
+            <div class="medalha">${medalha}</div>
+            <div class="funcionario-nome">${bonus["Nome Completo"] || 'Nome não informado'}</div>
+            <div class="funcionario-info">
+              <strong>Score CHA:</strong> ${score}<br>
+              <strong>Cargo:</strong> ${bonus["Cargo"] || 'Não informado'}
+            </div>
             
-            const score = bonus["Score"] || '0.00';
-            const conceito = funcionario ? (funcionario["Conceito (1-5 Likert)"] || '—') : '—';
-            const habilidade = funcionario ? (funcionario["Habilidade (1-5 Likert)"] || '—') : '—';
-            const atitude = funcionario ? (funcionario["Atitude (1-5 Likert)"] || '—') : '—';
-            const medalha = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
-            
-            // Dados da IA Gemini
-            const bonificacaoSugerida = bonus["Bonificação Sugerida"] || null;
-            const justificativaIA = bonus["Justificativa"] || null;
-            const valorSugerido = bonus["Valor Sugerido (R$)"] || null;
-            const categoria = bonus["Categoria"] || null;
-            const pesoPos = bonus["Peso Posição"] || null;
-            const hobby1 = bonus["Hobby 1"] || funcionario?.["Hobby 1"] || null;
-            const hobby2 = bonus["Hobby 2"] || funcionario?.["Hobby 2"] || null;
-            const hobby3 = bonus["Hobby 3"] || funcionario?.["Hobby 3"] || null;
-            
-            html += `
-              <div style="background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid ${idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32'};">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                  <div style="font-weight: bold; font-size: 1.1em;">${medalha} ${bonus["Nome Completo"]}</div>
-                  <div style="background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">Score: ${score}</div>
-                </div>
-                <div style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
-                  Posição no Dept: ${bonus["Posição"]}º | Cargo: ${bonus["Cargo"] || '—'}
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; font-size: 0.85em; margin-bottom: 12px;">
-                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
-                    <div><strong>Conceito</strong><br>${conceito}/5</div>
-                    <div><strong>Habilidade</strong><br>${habilidade}/5</div>
-                    <div><strong>Atitude</strong><br>${atitude}/5</div>
-                  </div>
-                </div>`;
-            
-            // Seção de Bonificação Personalizada por IA
-            if (bonificacaoSugerida && justificativaIA) {
-              const hobbies = [hobby1, hobby2, hobby3].filter(h => h && h.trim());
-              const hobbiesTexto = hobbies.length > 0 ? hobbies.join(', ') : 'Não informado';
-              const posicaoTexto = idx === 0 ? '1º Lugar' : idx === 1 ? '2º Lugar' : '3º Lugar';
+            <div class="cha-scores">
+              <h4>📊 Avaliações CHA (Likert 1-5)</h4>
+              <div class="cha-item">
+                <span class="cha-label">Conceito (Conhecimento)</span>
+                <span class="cha-valor">${conceito}/5</span>
+              </div>
+              <div class="cha-item">
+                <span class="cha-label">Habilidade</span>
+                <span class="cha-valor">${habilidade}/5</span>
+              </div>
+              <div class="cha-item">
+                <span class="cha-label">Atitude</span>
+                <span class="cha-valor">${atitude}/5</span>
+              </div>
+            </div>`;
+        
+        // Seção de Bonificação com IA
+        if (bonificacaoSugerida) {
+          html += `
+            <div class="bonificacao-ia-container">
+              <div class="bonificacao-ia-header">
+                <span style="font-size: 1.3em;">🎁</span>
+                <span>Bonificação Personalizada por IA</span>
+              </div>
               
-              html += `
-                <div style="background: #f0f9ff; padding: 12px; border-radius: 6px; border-top: 2px solid #e07b3c;">
-                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #e07b3c; font-weight: 600; font-size: 0.95em;">
-                    <span>🎁</span> Bonificação Personalizada por IA
-                  </div>
-                  <div style="background: white; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                    <div style="font-weight: bold; color: #333; font-size: 0.95em; margin-bottom: 6px;">
-                      ${bonificacaoSugerida}
-                    </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
-                      <span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">
-                        R$ ${valorSugerido ? valorSugerido.toFixed(2) : '0.00'}
-                      </span>
-                      <span style="background: #e8f5e8; color: #28a745; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">
-                        ${categoria}
-                      </span>
-                      ${pesoPos ? `<span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600;">Peso: ${(pesoPos * 100).toFixed(0)}%</span>` : ''}
-                    </div>
-                  </div>
-                  <div style="background: #fff3cd; border-left: 3px solid #ffc107; padding: 8px; border-radius: 0 4px 4px 0; margin-bottom: 8px;">
-                    <div style="font-size: 0.8em; color: #856404;">
-                      <strong>Justificativa:</strong> ${justificativaIA}
-                    </div>
-                  </div>
-                  <div style="background: white; padding: 8px; border-radius: 4px; font-size: 0.8em; color: #666;">
-                    <strong>Hobbies:</strong> ${hobbiesTexto}
-                  </div>
-                </div>`;
-            }
-            
-            html += `</div>`;
-          });
-          
-          html += '</div></div>';
-        });
-        html += '</div>';
-      }
+              <div class="bonificacao-ia-titulo">
+                ${bonificacaoSugerida}
+              </div>
+              
+              <div class="bonificacao-ia-detalhes">
+                <span class="bonificacao-valor">
+                  💰 R$ ${parseFloat(valorSugerido).toFixed(2)}
+                </span>
+                <span class="bonificacao-categoria">
+                  📂 ${categoria}
+                </span>
+                ${pesoPos ? `<span class="bonificacao-peso">⚖️ ${(pesoPos * 100).toFixed(0)}%</span>` : ''}
+              </div>
+              
+              ${descricaoPeso ? `<div style="font-size: 0.8em; color: #666; margin-top: 8px; text-align: center;">
+                <em>${descricaoPeso}</em>
+              </div>` : ''}
+              
+              <div class="hobbies-container">
+                <div class="hobbies-titulo">
+                  🎯 Hobbies analisados:
+                </div>
+                ${hobbies.length > 0 
+                  ? hobbies.map(h => `<span class="hobby-tag">${h}</span>`).join('') 
+                  : '<span class="sem-hobbies">Nenhum hobby informado</span>'
+                }
+              </div>
+            </div>`;
+        } else {
+          // Fallback caso não tenha análise de IA
+          html += `
+            <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+              <div style="font-size: 0.85em; color: #856404;">
+                ⚠️ <strong>Bonificação padrão:</strong> Vale-presente multiuso no valor de R$ 100,00
+              </div>
+            </div>`;
+        }
+        
+        html += `</div>`;
+      });
+      
       html += '</div>';
-
       bonificacoesContainer.innerHTML = html;
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(tabId).classList.add('active');
-    }
-
-    function mostrarDashboard(nomeCenario, dados, bonificacoes) {
-      ocultarTodosConteudos();
-      document.getElementById('dashboardContainer').style.display = "block";
-
-      const dadosProc = processarDados(dados);
-
-      const scores = dadosProc.map(f => toNumberScore(f["Score"])).filter(Number.isFinite);
-      const { n, media, mediana, max, desvio } = estatisticas(scores);
-
-      const depsTop = new Set((bonificacoes || []).map(b => (b["Departamento"] || 'Não informado')));
-
-      document.getElementById('dashboardResumo').innerHTML = `
-        <div class="stat-item">
-          <div class="stat-number">${nomeCenario}</div>
-          <div class="stat-label">Cenário</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${dadosProc.length}</div>
-          <div class="stat-label">Funcionários</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${media.toFixed(2)}</div>
-          <div class="stat-label">Média de Score</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${mediana.toFixed(2)}</div>
-          <div class="stat-label">Mediana do Score</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${max.toFixed(2)}</div>
-          <div class="stat-label">Maior Score</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${desvio.toFixed(2)}</div>
-          <div class="stat-label">Desvio Padrão</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">${depsTop.size}</div>
-          <div class="stat-label">Departamentos no Top 3</div>
-        </div>
-      `;
-
-      const mediasPorDepMap = new Map();
-      dadosProc.forEach(f => {
-        const dep = f["Departamento"] || "Não informado";
-        const sc = toNumberScore(f["Score"]);
-        if (!Number.isFinite(sc)) return;
-        if (!mediasPorDepMap.has(dep)) mediasPorDepMap.set(dep, { soma: 0, qtd: 0 });
-        const obj = mediasPorDepMap.get(dep);
-        obj.soma += sc; obj.qtd += 1;
-      });
-      const depLabels = Array.from(mediasPorDepMap.keys());
-      const depMedias = depLabels.map(d => (mediasPorDepMap.get(d).soma / mediasPorDepMap.get(d).qtd));
-
-      safeDestroy('chartFuncionarios');
-      charts.chartFuncionarios = new Chart(document.getElementById("chartFuncionarios"), {
-        type: "bar",
-        data: {
-          labels: depLabels,
-          datasets: [{
-            label: "Média de Score por Departamento",
-            data: depMedias,
-            backgroundColor: "#e07b3c"
-          }]
-        },
-        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Média de Score por Departamento" } }, scales: { y: { beginAtZero: true, max: 5 } } }
-      });
-
-      const top = dadosProc
-        .map(f => ({
-          nome: f["Nome Completo"] || f["Matrícula"] || "—",
-          dep: f["Departamento"] || "Não informado",
-          score: toNumberScore(f["Score"]) || 0
-        }))
-        .sort((a,b)=>b.score-a.score)
-        .slice(0, 10);
-
-      safeDestroy('chartBonificacoes');
-      charts.chartBonificacoes = new Chart(document.getElementById("chartBonificacoes"), {
-        type: "bar",
-        data: {
-          labels: top.map(t => `${t.nome} (${t.dep})`),
-          datasets: [{
-            label: "Top 10 Scores",
-            data: top.map(t => t.score),
-            backgroundColor: "#4caf50"
-          }]
-        },
-        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Top 10 Funcionários por Score" } }, scales: { x: { beginAtZero: true, max: 5 } } }
-      });
-
-      const { labels: binLabels, counts } = binScores(scores, 10);
-      safeDestroy('chartScore');
-      charts.chartScore = new Chart(document.getElementById("chartScore"), {
-        type: "bar",
-        data: { labels: binLabels, datasets: [{ label: "Distribuição de Scores", data: counts, backgroundColor: "#2196f3" }] },
-        options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: "Distribuição de Scores" } } }
-      });
-
-      const variabilidadeData = depLabels.map(dep => {
-        const scoresNoDep = dadosProc
-          .filter(f => (f["Departamento"] || "Não informado") === dep)
-          .map(f => toNumberScore(f["Score"]))
-          .filter(Number.isFinite)
-          .sort((a,b)=>a-b);
-        
-        if (!scoresNoDep.length) return { 
-          percentil10: 0, percentil25: 0, percentil75: 0, percentil90: 0,
-          amplitude: 0, coefVariacao: 0 
-        };
-        
-        const n = scoresNoDep.length;
-        const media = scoresNoDep.reduce((a,b)=>a+b,0)/n;
-        
-        const p10 = scoresNoDep[Math.floor(n * 0.1)] || scoresNoDep[0];
-        const p25 = scoresNoDep[Math.floor(n * 0.25)] || scoresNoDep[0];
-        const p75 = scoresNoDep[Math.floor(n * 0.75)] || scoresNoDep[n-1];
-        const p90 = scoresNoDep[Math.floor(n * 0.9)] || scoresNoDep[n-1];
-        
-        const amplitude = p75 - p25;
-        const desvio = Math.sqrt(scoresNoDep.reduce((s,v)=>s+(v-media)**2,0)/n);
-        const coefVariacao = media > 0 ? (desvio / media) * 100 : 0;
-        
-        return { percentil10: p10, percentil25: p25, percentil75: p75, percentil90: p90, amplitude, coefVariacao };
-      });
-
-      safeDestroy('chartScoreRange');
-      charts.chartScoreRange = new Chart(document.getElementById("chartScoreRange"), {
-        type: "bar",
-        data: {
-          labels: depLabels,
-          datasets: [
-            { 
-              label: "10º Percentil", 
-              data: variabilidadeData.map(d => d.percentil10), 
-              backgroundColor: "#e3f2fd",
-              borderColor: "#1976d2",
-              borderWidth: 1
-            },
-            { 
-              label: "25º Percentil", 
-              data: variabilidadeData.map(d => d.percentil25), 
-              backgroundColor: "#fff3e0",
-              borderColor: "#f57c00",
-              borderWidth: 1
-            },
-            { 
-              label: "75º Percentil", 
-              data: variabilidadeData.map(d => d.percentil75), 
-              backgroundColor: "#e8f5e8",
-              borderColor: "#388e3c",
-              borderWidth: 1
-            },
-            { 
-              label: "90º Percentil", 
-              data: variabilidadeData.map(d => d.percentil90), 
-              backgroundColor: "#fce4ec",
-              borderColor: "#c2185b",
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { 
-            title: { display: true, text: "Variabilidade de Scores por Departamento (Percentis)" },
-            tooltip: {
-              callbacks: {
-                afterBody: function(tooltipItems) {
-                  const index = tooltipItems[0].dataIndex;
-                  const dados = variabilidadeData[index];
-                  return [
-                    `Amplitude IQR: ${dados.amplitude.toFixed(2)}`,
-                    `Coef. Variação: ${dados.coefVariacao.toFixed(1)}%`
-                  ];
-                }
-              }
-            }
-          },
-          scales: { 
-            y: { beginAtZero: true, max: 5 },
-            x: { ticks: { maxRotation: 45 } }
-          },
-          interaction: { mode: 'index', intersect: false }
-        }
-      });
-
-      const tempoData = dadosProc.map(f => {
-        const admissao = f["Data de Admissão"] || "";
-        let anosNaCasa = 0;
-        
-        if (admissao) {
-          try {
-            let dataAdmissao;
-            if (admissao.includes('/')) {
-              const partes = admissao.split('/');
-              if (partes.length === 3) {
-                const d = parseInt(partes[0]);
-                const m = parseInt(partes[1]);
-                const y = parseInt(partes[2]);
-                dataAdmissao = new Date(y, m-1, d);
-              }
-            } else if (admissao.includes('-')) {
-              dataAdmissao = new Date(admissao);
-            }
-            
-            if (dataAdmissao && !isNaN(dataAdmissao.getTime())) {
-              const agora = new Date();
-              anosNaCasa = (agora - dataAdmissao) / (1000 * 60 * 60 * 24 * 365.25);
-              anosNaCasa = Math.max(0, anosNaCasa);
-            }
-          } catch (e) {
-            anosNaCasa = 0;
-          }
-        }
-
-        return {
-          anos: anosNaCasa,
-          score: toNumberScore(f["Score"]) || 0,
-          nome: f["Nome Completo"] || f["Matrícula"] || "—"
-        };
-      }).filter(d => d.anos > 0 && Number.isFinite(d.score));
-
-      safeDestroy('chartTempo');
-      charts.chartTempo = new Chart(document.getElementById("chartTempo"), {
-        type: "scatter",
-        data: {
-          datasets: [{
-            label: "Score vs Tempo de Casa",
-            data: tempoData.map(d => ({ x: d.anos, y: d.score })),
-            backgroundColor: "#9c27b0",
-            borderColor: "#9c27b0"
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { 
-            title: { display: true, text: "Relação Score x Tempo de Casa" },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const ponto = tempoData[context.dataIndex];
-                  return `${ponto.nome}: ${ponto.anos.toFixed(1)} anos, Score: ${ponto.score.toFixed(2)}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: { title: { display: true, text: "Anos na Empresa" } },
-            y: { title: { display: true, text: "Score (1-5)" }, beginAtZero: true, max: 5 }
-          }
-        }
-      });
-
-      const competenciasCHA = ['Conceito', 'Habilidade', 'Atitude'];
-      const mediaCompetencias = competenciasCHA.map(comp => {
-        const campo = `${comp} (1-5 Likert)`;
-        const valores = dadosProc
-          .map(f => toNumberScore(f[campo]))
-          .filter(Number.isFinite);
-        
-        return valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : 0;
-      });
-
-      const top3Competencias = (bonificacoes || []).slice(0, 3).map((bonus, idx) => {
-        const funcionario = dadosProc.find(f => 
-          f["Nome Completo"] === bonus["Nome Completo"] || f["Matrícula"] === bonus["Matrícula"]
-        );
-        
-        if (!funcionario) return null;
-        
-        return {
-          label: `${idx + 1}º Lugar`,
-          data: competenciasCHA.map(comp => {
-            const campo = `${comp} (1-5 Likert)`;
-            return toNumberScore(funcionario[campo]) || 0;
-          }),
-          backgroundColor: idx === 0 ? 'rgba(255, 215, 0, 0.2)' : idx === 1 ? 'rgba(192, 192, 192, 0.2)' : 'rgba(205, 127, 50, 0.2)',
-          borderColor: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32',
-          borderWidth: 2
-        };
-      }).filter(Boolean);
-
-      safeDestroy('chartCompetencias');
-      charts.chartCompetencias = new Chart(document.getElementById("chartCompetencias"), {
-        type: "radar",
-        data: {
-          labels: competenciasCHA,
-          datasets: [
-            {
-              label: "Média Geral",
-              data: mediaCompetencias,
-              backgroundColor: 'rgba(224, 123, 60, 0.2)',
-              borderColor: '#e07b3c',
-              borderWidth: 2
-            },
-            ...top3Competencias
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { title: { display: true, text: "Método CHA: Média Geral vs Top 3" } },
-          scales: {
-            r: {
-              beginAtZero: true,
-              max: 5,
-              ticks: { stepSize: 1 }
-            }
-          }
-        }
-      });
-    }
-
-    function criarGrupoCenario(cenario, dados, bonificacoesGeral, bonificacoesDept) {
+    function criarGrupoDepartamento(departamento, dados, bonificacoes) {
       const grupo = document.createElement('div');
-      grupo.className = 'cenario-grupo';
-      const titulo = document.createElement('div');
-      titulo.className = 'cenario-titulo';
+      grupo.className = 'departamento-grupo';
       
-      const totalBonif = (bonificacoesGeral?.length || 0) + (bonificacoesDept?.length || 0);
-      titulo.textContent = `${cenario} (${dados.length} funcionários | ${totalBonif} bonificações)`;
+      const titulo = document.createElement('div');
+      titulo.className = 'departamento-titulo';
+      
+      const top3 = bonificacoes?.slice(0, 3) || [];
+      const comIA = top3.filter(b => b["Bonificação Sugerida"] || b["BonificaÃ§Ã£o Sugerida"]).length;
+      const badgeIA = comIA > 0 ? ` <span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">🤖 ${comIA} IA</span>` : '';
+      
+      titulo.innerHTML = `${departamento} <span style="color: #999; font-weight: normal;">(${dados.length} funcionários | Top 3)</span>${badgeIA}`;
       
       const botoes = document.createElement('div');
-      botoes.className = 'cenario-botoes';
-      
-      const btnDashboard = document.createElement('button');
-      btnDashboard.textContent = `Dashboard`;
-      btnDashboard.onclick = () => mostrarDashboard(cenario, dados, bonificacoesGeral);
+      botoes.className = 'departamento-botoes';
       
       const btnDados = document.createElement('button');
-      btnDados.textContent = `Funcionários`;
-      btnDados.onclick = () => prepararTabela(dados, cenario);
+      btnDados.textContent = `👥 Funcionários`;
+      btnDados.onclick = () => prepararTabela(dados, departamento);
       
       const btnBonificacoes = document.createElement('button');
       btnBonificacoes.className = 'btn-bonificacoes';
-      btnBonificacoes.textContent = `Bonificações`;
-      btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoesGeral, bonificacoesDept, cenario);
+      btnBonificacoes.textContent = `🏆 Top 3`;
+      btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoes, departamento);
       
-      botoes.appendChild(btnDashboard);
       botoes.appendChild(btnDados);
       botoes.appendChild(btnBonificacoes);
       grupo.appendChild(titulo);
@@ -860,55 +358,72 @@
     }
 
     fetch("https://iafyt5.app.n8n.cloud/webhook/relatorios")
-      .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`); return res.json(); })
+      .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
       .then(data => {
         statusContainer.innerHTML = '';
         dadosCompletos = data;
         
-        // PRIORIZAR dados com hobbies
+        console.log('📊 Dados recebidos:', data);
+        
         const relatorios = data.relatorios || {};
         const bonificacoes = data.bonificacoes_com_hobbies || data.bonificacoes || {};
-        const bonificacoesDept = data.bonificacoes_dept_com_hobbies || data.bonificacoes_por_departamento || {};
-        
-        console.log('🔍 Debug - Dados recebidos:', {
-          temRelatorios: !!data.relatorios,
-          temBonificacoesComHobbies: !!data.bonificacoes_com_hobbies,
-          temBonificacoesDeptComHobbies: !!data.bonificacoes_dept_com_hobbies,
-          cenarios: Object.keys(bonificacoes)
-        });
         
         let dadosPresentes = false;
-        for (const cenario in relatorios) {
-          const dados = relatorios[cenario];
+        let totalFuncionarios = 0;
+        let totalTop3 = 0;
+        let totalComIA = 0;
+        
+        for (const departamento in relatorios) {
+          const dados = relatorios[departamento];
           if (Array.isArray(dados) && dados.length > 0) {
             dadosPresentes = true;
-            const bonifGeral = bonificacoes[cenario] || [];
-            const bonifDept = bonificacoesDept[cenario] || [];
+            totalFuncionarios += dados.length;
             
-            console.log(`📊 Cenário: ${cenario}`, {
-              funcionarios: dados.length,
-              bonificacoesGeral: bonifGeral.length,
-              bonificacoesDept: bonifDept.length,
-              temHobbies: bonifGeral[0]?.["Bonificação Sugerida"] ? true : false
-            });
+            const bonifDept = bonificacoes[departamento] || [];
+            totalTop3 += Math.min(3, bonifDept.length);
             
-            const grupo = criarGrupoCenario(cenario, dados, bonifGeral, bonifDept);
-            botoesRelatorios.appendChild(grupo);
+            const comIA = bonifDept.filter(b => b["Bonificação Sugerida"] || b["BonificaÃ§Ã£o Sugerida"]).length;
+            totalComIA += comIA;
+            
+            const grupo = criarGrupoDepartamento(departamento, dados, bonifDept);
+            botoesDepartamentos.appendChild(grupo);
           }
         }
         
         if (!dadosPresentes) {
-          statusContainer.innerHTML = '<div class="error">Nenhum cenário retornou dados. Verifique se o arquivo foi processado corretamente.</div>';
+          statusContainer.innerHTML = '<div class="error">❌ Nenhum departamento retornou dados.</div>';
         } else {
-          const temIA = data.bonificacoes_com_hobbies || data.bonificacoes_dept_com_hobbies;
-          const qtdComIA = temIA ? Object.values(bonificacoes).reduce((acc, arr) => acc + arr.filter(b => b["Bonificação Sugerida"]).length, 0) : 0;
-          const msgIA = qtdComIA > 0 ? ` | <span style="color: #28a745;">✓ ${qtdComIA} análises de IA ativas</span>` : '';
-          statusContainer.innerHTML = `<div class="success">Relatórios carregados! Método CHA ativo.${msgIA}</div>`;
+          // Mostrar resumo geral
+          resumoGeral.style.display = 'block';
+          statsGerais.innerHTML = `
+            <div class="stat-item">
+              <div class="stat-number">${Object.keys(relatorios).length}</div>
+              <div class="stat-label">Departamentos</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${totalFuncionarios}</div>
+              <div class="stat-label">Funcionários</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${totalTop3}</div>
+              <div class="stat-label">Top 3 Selecionados</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${totalComIA}</div>
+              <div class="stat-label">🤖 Análises de IA</div>
+            </div>
+          `;
+          
+          const msgIA = totalComIA > 0 
+            ? ` | <span style="color: #4caf50; font-weight: bold;">✓ ${totalComIA} bonificações com IA ativa</span>` 
+            : ' | <span style="color: #ff9800;">⚠️ Sem análise de IA</span>';
+          
+          statusContainer.innerHTML = `<div class="success">✅ ${Object.keys(relatorios).length} departamentos carregados!${msgIA}</div>`;
         }
       })
       .catch(error => {
-        console.error('Erro ao carregar relatórios:', error);
-        statusContainer.innerHTML = `<div class="error">Erro ao carregar os relatórios: ${error.message}</div>`;
+        console.error('Erro:', error);
+        statusContainer.innerHTML = `<div class="error">❌ Erro ao carregar: ${error.message}</div>`;
       });
   </script>
 </body>
