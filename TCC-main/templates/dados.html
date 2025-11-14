@@ -6,70 +6,66 @@
   <title>FYT – Análise por Departamento</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f8f9fa; }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f5f5f5; }
     header { background-color: #e07b3c; color: white; padding: 15px 20px; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; }
     .container { padding: 20px; }
     h2 { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: white; border-radius: 2px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     th, td { padding: 10px 12px; border-bottom: 1px solid #ddd; text-align: left; }
     th { background-color: #f1f1f1; font-weight: 600; color: #333; }
     th:nth-child(1), td:nth-child(1) { background-color: #e8f4f8; font-weight: bold; text-align: center; color: #2563eb; }
     th:nth-child(2), td:nth-child(2) { background-color: #f0f9ff; font-weight: bold; text-align: center; color: #1d4ed8; }
     tr:hover { background-color: #f9f9f9; }
-    .filtro-container { margin: 30px 0 20px 0; background-color: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 0 8px rgba(0, 0, 0, 0.03); }
+    .filtro-container { margin: 30px 0 20px 0; background-color: #ffffff; padding: 25px; border-radius: 2px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
     .filtro-container h3 { margin-bottom: 20px; color: #333; }
     .filtros-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
     .filtro-box { display: flex; flex-direction: column; position: relative; }
-    .filtro-box button { padding: 10px 14px; background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; text-align: left; cursor: pointer; transition: background-color 0.2s; }
+    .filtro-box button { padding: 10px 14px; background-color: #f1f1f1; border: 1px solid #ccc; border-radius: 2px; font-size: 14px; text-align: left; cursor: pointer; transition: background-color 0.2s; }
     .filtro-box button:hover { background-color: #e6e6e6; }
-    .filtro-input { margin-top: 8px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; display: none; }
-    .departamento-grupo { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
+    .filtro-input { margin-top: 8px; padding: 10px 12px; border: 1px solid #ccc; border-radius: 2px; font-size: 14px; display: none; }
+    .departamento-grupo { display: flex; justify-content: space-between; align-items: center; background-color: #fff; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); }
     .departamento-titulo { font-weight: 600; font-size: 16px; color: #333; }
-    .departamento-grupo button { padding: 8px 14px; background-color: #e07b3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; margin-left: 8px; }
+    .departamento-grupo button { padding: 8px 14px; background-color: #e07b3c; color: white; border: none; border-radius: 2px; cursor: pointer; font-weight: 500; transition: background-color 0.2s ease; margin-left: 8px; }
     .departamento-grupo button:hover { background-color: #cf6a2b; }
     .departamento-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn-bonificacoes { background-color: #28a745 !important; }
     .btn-bonificacoes:hover { background-color: #218838 !important; }
-    .bonificacoes-container { background-color: #fff; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+    .bonificacoes-container { background-color: #fff; border-radius: 2px; padding: 20px; margin: 20px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: none; }
     .podium-container { display: flex; justify-content: space-around; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-    .posicao-card { flex: 1; min-width: 280px; background: #ffffff; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 4px solid; }
+    .posicao-card { flex: 1; min-width: 280px; background: #ffffff; border-radius: 2px; padding: 20px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-top: 4px solid; }
     .posicao-card.primeiro { border-top-color: #ffd700; }
     .posicao-card.segundo { border-top-color: #c0c0c0; }
     .posicao-card.terceiro { border-top-color: #cd7f32; }
-    .medalha { font-size: 2.5em; margin-bottom: 10px; }
+    .posicao-badge { display: inline-block; background: #e07b3c; color: white; padding: 4px 12px; border-radius: 2px; font-weight: 600; font-size: 0.9em; margin-bottom: 10px; }
     .funcionario-nome { font-weight: bold; font-size: 1.1em; color: #333; margin-bottom: 8px; }
     .funcionario-info { color: #666; font-size: 0.9em; margin-bottom: 15px; }
-    .cha-scores { background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: left; }
-    .cha-scores h4 { margin: 0 0 12px 0; color: #333; font-size: 0.95em; }
-    .cha-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; }
+    .cha-scores { background-color: #f8f9fa; border-radius: 2px; padding: 15px; margin-top: 15px; text-align: left; border: 1px solid #e0e0e0; }
+    .cha-scores h4 { margin: 0 0 12px 0; color: #333; font-size: 0.95em; font-weight: 600; }
+    .cha-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 2px; border: 1px solid #e0e0e0; }
     .cha-label { font-weight: 600; color: #e07b3c; }
     .cha-valor { font-weight: bold; color: #333; font-size: 1.1em; }
-    .bonificacao-ia-container { margin-top: 15px; border-top: 2px solid #28a745; padding-top: 15px; background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border-radius: 8px; padding: 15px; }
+    .bonificacao-ia-container { margin-top: 15px; border-top: 2px solid #28a745; padding-top: 15px; background: #f8f9fa; border-radius: 2px; padding: 15px; border: 1px solid #e0e0e0; }
     .bonificacao-ia-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #2e7d32; font-weight: 600; }
-    .bonificacao-ia-titulo { font-size: 1.05em; font-weight: bold; color: #1b5e20; margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #4caf50; }
+    .bonificacao-ia-titulo { font-size: 1.05em; font-weight: bold; color: #1b5e20; margin-bottom: 10px; padding: 10px; background: white; border-radius: 2px; border-left: 3px solid #4caf50; }
     .bonificacao-ia-detalhes { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-    .bonificacao-valor { background: #4caf50; color: white; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 1.1em; display: inline-flex; align-items: center; gap: 5px; }
-    .bonificacao-categoria { background: #fff9c4; color: #f57f17; padding: 4px 12px; border-radius: 15px; font-weight: 600; font-size: 0.85em; border: 1px solid #fbc02d; }
-    .bonificacao-peso { background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 15px; font-weight: 600; font-size: 0.85em; border: 1px solid #64b5f6; }
-    .hobbies-container { background: white; padding: 12px; border-radius: 6px; margin-top: 10px; border: 1px solid #e0e0e0; }
-    .hobbies-titulo { font-weight: 600; color: #666; font-size: 0.85em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-    .hobby-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; margin-right: 6px; margin-bottom: 6px; }
+    .bonificacao-valor { background: #4caf50; color: white; padding: 6px 14px; border-radius: 2px; font-weight: 700; font-size: 1.1em; display: inline-flex; align-items: center; gap: 5px; }
+    .bonificacao-categoria { background: #fff9c4; color: #f57f17; padding: 4px 12px; border-radius: 2px; font-weight: 600; font-size: 0.85em; border: 1px solid #fbc02d; }
+    .bonificacao-peso { background: #e3f2fd; color: #1565c0; padding: 4px 12px; border-radius: 2px; font-weight: 600; font-size: 0.85em; border: 1px solid #64b5f6; }
+    .hobbies-container { background: white; padding: 12px; border-radius: 2px; margin-top: 10px; border: 1px solid #e0e0e0; }
+    .hobbies-titulo { font-weight: 600; color: #666; font-size: 0.85em; margin-bottom: 8px; }
+    .hobby-tag { display: inline-block; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 2px; font-size: 0.8em; margin-right: 6px; margin-bottom: 6px; border: 1px solid #90caf9; }
     .sem-hobbies { color: #999; font-style: italic; font-size: 0.85em; }
     .loading { text-align: center; color: #6b7280; font-style: italic; }
-    .error { color: #dc2626; background-color: #fee2e2; padding: 12px; border-radius: 6px; margin: 10px 0; }
-    .success { color: #15803d; background-color: #d1fae5; padding: 12px; border-radius: 6px; margin: 10px 0; }
-    .voltar-botao { background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
-    .resumo-bonificacoes { background: #ffffff; color: #333; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid #e0e0e0; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+    .error { color: #dc2626; background-color: #fee2e2; padding: 12px; border-radius: 2px; margin: 10px 0; border-left: 3px solid #dc2626; }
+    .success { color: #15803d; background-color: #d1fae5; padding: 12px; border-radius: 2px; margin: 10px 0; border-left: 3px solid #15803d; }
+    .voltar-botao { background-color: #e07b3c; color: white; padding: 10px 15px; border-radius: 2px; font-weight: bold; cursor: pointer; border: none; }
+    .resumo-bonificacoes { background: #ffffff; color: #333; padding: 20px; border-radius: 2px; margin-bottom: 20px; text-align: center; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .resumo-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-top: 15px; }
-    .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .stat-item { background: #f8f9fa; padding: 15px; border-radius: 2px; border: 1px solid #e0e0e0; }
     .stat-number { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; color: #e07b3c; }
     .stat-label { font-size: 0.9em; opacity: 0.7; }
-    .metodo-badge { display: inline-block; background: #e07b3c; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; margin-left: 10px; }
-    .ia-badge { display: inline-block; background: #4caf50; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; margin-left: 10px; animation: pulse 2s infinite; }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
+    .metodo-badge { display: inline-block; background: #e07b3c; color: white; padding: 4px 12px; border-radius: 2px; font-size: 0.85em; margin-left: 10px; }
+    .ia-badge { display: inline-block; background: #4caf50; color: white; padding: 4px 12px; border-radius: 2px; font-size: 0.85em; margin-left: 10px; }
     @media (max-width: 768px) { 
       .podium-container { flex-direction: column; } 
       .departamento-botoes { flex-direction: column; }
@@ -82,7 +78,7 @@
     <div>
       Análise por Departamento 
       <span class="metodo-badge">Método CHA</span>
-      <span class="ia-badge">🤖 IA Ativa</span>
+      <span class="ia-badge">IA Ativa</span>
     </div>
   </header>
 
@@ -91,7 +87,7 @@
     <div id="status-container"><div class="loading">Carregando departamentos...</div></div>
 
     <div class="resumo-bonificacoes" id="resumoGeral" style="display: none;">
-      <h3>📊 Resumo Geral</h3>
+      <h3>Resumo Geral</h3>
       <div class="resumo-stats" id="statsGerais"></div>
     </div>
 
@@ -120,8 +116,8 @@
   </div>
 
   <div style="position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px;">
-    <button onclick="location.reload()" class="voltar-botao" style="background-color: #28a745;">🔄 Atualizar</button>
-    <button onclick="window.location.href = 'upload.html'" class="voltar-botao">← Voltar</button>
+    <button onclick="location.reload()" class="voltar-botao" style="background-color: #28a745;">Atualizar</button>
+    <button onclick="window.location.href = 'upload.html'" class="voltar-botao">Voltar</button>
   </div>
 
   <script>
@@ -215,7 +211,7 @@
       ocultarTodosConteudos();
       bonificacoesContainer.style.display = 'block';
       const titulo = document.querySelector('h2');
-      titulo.textContent = `🏆 Top 3 – ${nomeDepartamento}`;
+      titulo.textContent = `Top 3 – ${nomeDepartamento}`;
 
       if (!bonificacoes || bonificacoes.length === 0) {
         bonificacoesContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma bonificação disponível.</p>';
@@ -226,7 +222,6 @@
       
       bonificacoes.slice(0, 3).forEach((bonus, index) => {
         const posicaoClass = index === 0 ? 'primeiro' : index === 1 ? 'segundo' : 'terceiro';
-        const medalha = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
         const posicaoTexto = `${index + 1}º Lugar`;
         
         const score = bonus["Score"] || '0.00';
@@ -248,7 +243,7 @@
         
         html += `
           <div class="posicao-card ${posicaoClass}">
-            <div class="medalha">${medalha}</div>
+            <div class="posicao-badge">${posicaoTexto}</div>
             <div class="funcionario-nome">${bonus["Nome Completo"] || 'Nome não informado'}</div>
             <div class="funcionario-info">
               <strong>Score CHA:</strong> ${score}<br>
@@ -256,7 +251,7 @@
             </div>
             
             <div class="cha-scores">
-              <h4>📊 Avaliações CHA (Likert 1-5)</h4>
+              <h4>Avaliações CHA (Likert 1-5)</h4>
               <div class="cha-item">
                 <span class="cha-label">Conceito (Conhecimento)</span>
                 <span class="cha-valor">${conceito}/5</span>
@@ -276,8 +271,7 @@
           html += `
             <div class="bonificacao-ia-container">
               <div class="bonificacao-ia-header">
-                <span style="font-size: 1.3em;">🎁</span>
-                <span>Bonificação Personalizada por IA</span>
+                Bonificação Personalizada por IA
               </div>
               
               <div class="bonificacao-ia-titulo">
@@ -286,12 +280,12 @@
               
               <div class="bonificacao-ia-detalhes">
                 <span class="bonificacao-valor">
-                  💰 R$ ${parseFloat(valorSugerido).toFixed(2)}
+                  R$ ${parseFloat(valorSugerido).toFixed(2)}
                 </span>
                 <span class="bonificacao-categoria">
-                  📂 ${categoria}
+                  ${categoria}
                 </span>
-                ${pesoPos ? `<span class="bonificacao-peso">⚖️ ${(pesoPos * 100).toFixed(0)}%</span>` : ''}
+                ${pesoPos ? `<span class="bonificacao-peso">${(pesoPos * 100).toFixed(0)}%</span>` : ''}
               </div>
               
               ${descricaoPeso ? `<div style="font-size: 0.8em; color: #666; margin-top: 8px; text-align: center;">
@@ -300,7 +294,7 @@
               
               <div class="hobbies-container">
                 <div class="hobbies-titulo">
-                  🎯 Hobbies analisados:
+                  Hobbies analisados:
                 </div>
                 ${hobbies.length > 0 
                   ? hobbies.map(h => `<span class="hobby-tag">${h}</span>`).join('') 
@@ -311,9 +305,9 @@
         } else {
           // Fallback caso não tenha análise de IA
           html += `
-            <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 2px; border-left: 3px solid #ffc107;">
               <div style="font-size: 0.85em; color: #856404;">
-                ⚠️ <strong>Bonificação padrão:</strong> Vale-presente multiuso no valor de R$ 100,00
+                <strong>Bonificação padrão:</strong> Vale-presente multiuso no valor de R$ 100,00
               </div>
             </div>`;
         }
@@ -334,7 +328,7 @@
       
       const top3 = bonificacoes?.slice(0, 3) || [];
       const comIA = top3.filter(b => b["Bonificação Sugerida"] || b["BonificaÃ§Ã£o Sugerida"]).length;
-      const badgeIA = comIA > 0 ? ` <span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">🤖 ${comIA} IA</span>` : '';
+      const badgeIA = comIA > 0 ? ` <span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 2px; font-size: 0.75em;">${comIA} IA</span>` : '';
       
       titulo.innerHTML = `${departamento} <span style="color: #999; font-weight: normal;">(${dados.length} funcionários | Top 3)</span>${badgeIA}`;
       
@@ -342,12 +336,12 @@
       botoes.className = 'departamento-botoes';
       
       const btnDados = document.createElement('button');
-      btnDados.textContent = `👥 Funcionários`;
+      btnDados.textContent = `Funcionários`;
       btnDados.onclick = () => prepararTabela(dados, departamento);
       
       const btnBonificacoes = document.createElement('button');
       btnBonificacoes.className = 'btn-bonificacoes';
-      btnBonificacoes.textContent = `🏆 Top 3`;
+      btnBonificacoes.textContent = `Top 3`;
       btnBonificacoes.onclick = () => mostrarBonificacoes(bonificacoes, departamento);
       
       botoes.appendChild(btnDados);
@@ -391,7 +385,7 @@
         }
         
         if (!dadosPresentes) {
-          statusContainer.innerHTML = '<div class="error">❌ Nenhum departamento retornou dados.</div>';
+          statusContainer.innerHTML = '<div class="error">✕ Nenhum departamento retornou dados.</div>';
         } else {
           // Mostrar resumo geral
           resumoGeral.style.display = 'block';
@@ -410,20 +404,20 @@
             </div>
             <div class="stat-item">
               <div class="stat-number">${totalComIA}</div>
-              <div class="stat-label">🤖 Análises de IA</div>
+              <div class="stat-label">Análises de IA</div>
             </div>
           `;
           
           const msgIA = totalComIA > 0 
             ? ` | <span style="color: #4caf50; font-weight: bold;">✓ ${totalComIA} bonificações com IA ativa</span>` 
-            : ' | <span style="color: #ff9800;">⚠️ Sem análise de IA</span>';
+            : ' | <span style="color: #ff9800;">⚠ Sem análise de IA</span>';
           
-          statusContainer.innerHTML = `<div class="success">✅ ${Object.keys(relatorios).length} departamentos carregados!${msgIA}</div>`;
+          statusContainer.innerHTML = `<div class="success">✓ ${Object.keys(relatorios).length} departamentos carregados!${msgIA}</div>`;
         }
       })
       .catch(error => {
         console.error('Erro:', error);
-        statusContainer.innerHTML = `<div class="error">❌ Erro ao carregar: ${error.message}</div>`;
+        statusContainer.innerHTML = `<div class="error">✕ Erro ao carregar: ${error.message}</div>`;
       });
   </script>
 </body>
