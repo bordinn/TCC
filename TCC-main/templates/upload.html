@@ -53,6 +53,11 @@
       background-color: #ffe8d9;
     }
 
+    .upload-icon {
+      font-size: 60px;
+      color: #e07b3c;
+    }
+
     .format-info {
       text-align: center;
       color: #666;
@@ -81,14 +86,13 @@
       cursor: not-allowed;
     }
 
-    /* BARRA DE PROGRESSO - SEM ARREDONDAMENTO, MAIS GROSSA */
     .progress-container {
       width: 100%;
       background-color: #e0e0e0;
       margin-top: 20px;
       display: none;
-      height: 40px; /* Mais grossa */
-      border: 2px solid #333; /* Borda para destaque */
+      height: 40px;
+      border: 2px solid #333;
     }
 
     .progress-bar {
@@ -99,44 +103,29 @@
       color: white;
       font-weight: bold;
       font-size: 18px;
-      transition: width 0.5s linear;
+      transition: width 0.3s linear;
       width: 0%;
     }
 
-    .processing-info {
+    .processing-message {
       background-color: #fff3cd;
       border-left: 5px solid #ffc107;
       padding: 20px;
       margin-top: 20px;
       display: none;
+      text-align: center;
     }
 
-    .processing-info h4 {
-      margin: 0 0 15px 0;
+    .processing-message h4 {
+      margin: 0 0 10px 0;
       color: #856404;
       font-size: 18px;
     }
 
-    .processing-step {
-      margin: 8px 0;
-      padding: 12px;
-      background: white;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .processing-message p {
+      margin: 5px 0;
+      color: #856404;
       font-size: 15px;
-    }
-
-    .processing-step.active {
-      background: #fff3cd;
-      font-weight: bold;
-      border-left: 4px solid #ffc107;
-    }
-
-    .processing-step.done {
-      background: #d4edda;
-      color: #155724;
-      border-left: 4px solid #28a745;
     }
 
     .stats-summary {
@@ -208,7 +197,7 @@
     </select>
 
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-      <div style="font-size: 60px;">📄</div>
+      <div class="upload-icon">📄</div>
       <div style="margin-top: 10px; font-size: 16px; color: #666;">Clique para selecionar arquivo CSV</div>
     </div>
 
@@ -224,38 +213,14 @@
       <div class="progress-bar" id="progressBar">0%</div>
     </div>
 
-    <div class="processing-info" id="processingInfo">
-      <h4>⚙️ Processamento em andamento...</h4>
-      <div id="processingSteps">
-        <div class="processing-step" data-step="1">
-          <span>⏳</span> Enviando arquivo para servidor
-        </div>
-        <div class="processing-step" data-step="2">
-          <span>⏳</span> Lendo e validando dados CSV
-        </div>
-        <div class="processing-step" data-step="3">
-          <span>⏳</span> Calculando scores CHA (Conceito, Habilidade, Atitude)
-        </div>
-        <div class="processing-step" data-step="4">
-          <span>⏳</span> Identificando Top Performers por cenário
-        </div>
-        <div class="processing-step" data-step="5">
-          <span>⏳</span> Analisando hobbies com IA Groq
-        </div>
-        <div class="processing-step" data-step="6">
-          <span>⏳</span> Gerando relatórios personalizados
-        </div>
-        <div class="processing-step" data-step="7">
-          <span>⏳</span> Salvando dados no GitHub Gist
-        </div>
-      </div>
-      <p style="margin: 20px 0 0 0; font-style: italic; text-align: center; font-size: 15px;">
-        ⏰ <strong>Tempo estimado: 40 segundos</strong>
-      </p>
+    <div class="processing-message" id="processingMessage">
+      <h4>Processamento em andamento</h4>
+      <p>Aguarde enquanto os dados são processados...</p>
+      <p style="margin-top: 10px; font-style: italic;">Tempo estimado: 10 segundos</p>
     </div>
 
     <div class="stats-summary" id="statsSummary">
-      <h4>📊 Resumo do Processamento</h4>
+      <h4>Resumo do Processamento</h4>
       <div id="statsContent"></div>
     </div>
 
@@ -281,7 +246,7 @@
 
       const extensao = file.name.split(".").pop().toLowerCase();
       if (extensao !== "csv") {
-        mensagem.textContent = "❌ Formato inválido. Envie um arquivo .CSV.";
+        mensagem.textContent = "Formato inválido. Envie um arquivo .CSV.";
         mensagem.style.color = "red";
         mensagem.style.backgroundColor = "#ffe6e6";
         nomeArquivo.textContent = "";
@@ -289,24 +254,9 @@
         return;
       }
 
-      nomeArquivo.textContent = `📁 Arquivo selecionado: ${file.name}`;
+      nomeArquivo.textContent = `Arquivo selecionado: ${file.name}`;
       arquivoSelecionado = file;
     });
-
-    function updateStep(stepNumber, status) {
-      const step = document.querySelector(`[data-step="${stepNumber}"]`);
-      if (!step) return;
-
-      step.classList.remove('active', 'done');
-      
-      if (status === 'active') {
-        step.classList.add('active');
-        step.querySelector('span').textContent = '⚙️';
-      } else if (status === 'done') {
-        step.classList.add('done');
-        step.querySelector('span').textContent = '✅';
-      }
-    }
 
     function exibirEstatisticas(resultado) {
       const statsContent = document.getElementById('statsContent');
@@ -317,7 +267,7 @@
       if (resultado.resumo) {
         html += `
           <div class="stat-item">
-            <span class="stat-label">📁 Cenários Processados:</span>
+            <span class="stat-label">Cenários Processados:</span>
             <span class="stat-value">${resultado.resumo.total_cenarios || 0}</span>
           </div>
         `;
@@ -327,15 +277,15 @@
         const stats = resultado.estatisticas_hobbies;
         html += `
           <div class="stat-item">
-            <span class="stat-label">👥 Total Analisado:</span>
+            <span class="stat-label">Total Analisado:</span>
             <span class="stat-value">${stats.total_analisados || 0} funcionários</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">💰 Valor Total Sugerido:</span>
+            <span class="stat-label">Valor Total Sugerido:</span>
             <span class="stat-value">R$ ${(stats.valor_total_sugerido || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
           </div>
           <div class="stat-item">
-            <span class="stat-label">✅ Taxa de Sucesso:</span>
+            <span class="stat-label">Taxa de Sucesso:</span>
             <span class="stat-value">${stats.taxa_sucesso || '0%'}</span>
           </div>
         `;
@@ -344,7 +294,7 @@
       if (resultado.gist_info && resultado.gist_info.url) {
         html += `
           <div class="stat-item" style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #2196F3;">
-            <span class="stat-label">🔗 GitHub Gist:</span>
+            <span class="stat-label">GitHub Gist:</span>
             <a href="${resultado.gist_info.url}" target="_blank" style="color: #1976d2; font-weight: bold; text-decoration: underline;">Acessar Relatórios</a>
           </div>
         `;
@@ -359,7 +309,7 @@
       const botao = document.getElementById("botaoEnviar");
       const progressContainer = document.getElementById("progressContainer");
       const progressBar = document.getElementById("progressBar");
-      const processingInfo = document.getElementById("processingInfo");
+      const processingMessage = document.getElementById("processingMessage");
       const countdown = document.getElementById("countdown");
       const statsSummary = document.getElementById("statsSummary");
       
@@ -369,7 +319,7 @@
       statsSummary.style.display = 'none';
 
       if (!arquivoSelecionado) {
-        mensagem.textContent = "❌ Nenhum arquivo foi selecionado.";
+        mensagem.textContent = "Nenhum arquivo foi selecionado.";
         mensagem.style.color = "red";
         mensagem.style.backgroundColor = "#ffe6e6";
         return;
@@ -381,26 +331,14 @@
       
       // Mostrar UI de progresso
       progressContainer.style.display = 'block';
-      processingInfo.style.display = 'block';
+      processingMessage.style.display = 'block';
 
-      // PROGRESSO SIMULADO DE 40 SEGUNDOS
-      const DURACAO_TOTAL = 40000; // 40 segundos
+      // PROGRESSO SIMULADO DE 10 SEGUNDOS
+      const DURACAO_TOTAL = 10000; // 10 segundos
       const INTERVALO = 100; // Atualiza a cada 100ms
       const TOTAL_UPDATES = DURACAO_TOTAL / INTERVALO;
       
       let currentUpdate = 0;
-      let currentStep = 1;
-
-      // Define quando cada etapa começa (em % do progresso)
-      const stepBreakpoints = [
-        { step: 1, startPercent: 0 },   // 0-10%
-        { step: 2, startPercent: 10 },  // 10-20%
-        { step: 3, startPercent: 20 },  // 20-35%
-        { step: 4, startPercent: 35 },  // 35-50%
-        { step: 5, startPercent: 50 },  // 50-70%
-        { step: 6, startPercent: 70 },  // 70-85%
-        { step: 7, startPercent: 85 }   // 85-100%
-      ];
 
       const progressInterval = setInterval(() => {
         currentUpdate++;
@@ -409,20 +347,6 @@
         // Atualizar barra
         progressBar.style.width = percentComplete + '%';
         progressBar.textContent = Math.floor(percentComplete) + '%';
-        
-        // Atualizar etapa ativa
-        for (let i = stepBreakpoints.length - 1; i >= 0; i--) {
-          if (percentComplete >= stepBreakpoints[i].startPercent) {
-            if (currentStep !== stepBreakpoints[i].step) {
-              if (currentStep > 0) {
-                updateStep(currentStep, 'done');
-              }
-              currentStep = stepBreakpoints[i].step;
-              updateStep(currentStep, 'active');
-            }
-            break;
-          }
-        }
         
         if (currentUpdate >= TOTAL_UPDATES) {
           clearInterval(progressInterval);
@@ -434,42 +358,37 @@
         formData.append('file', arquivoSelecionado);
         formData.append('area', document.getElementById("areaSelect").value);
 
-        console.log('📤 Enviando arquivo para n8n...');
+        console.log('Enviando arquivo para n8n...');
         const startTime = Date.now();
 
-        // Fazer requisição (mas não esperar resposta imediata)
+        // Fazer requisição
         const resposta = await fetch('https://iafyt5.app.n8n.cloud/webhook/upload-planilha', {
           method: 'POST',
           body: formData
         });
 
         const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`⏱️ Upload concluído em: ${elapsedTime}s`);
+        console.log(`Upload concluído em: ${elapsedTime}s`);
 
-        // Aguardar os 40 segundos completos antes de processar resposta
+        // Aguardar os 10 segundos completos antes de processar resposta
         const tempoRestante = DURACAO_TOTAL - (Date.now() - startTime);
         if (tempoRestante > 0) {
-          console.log(`⏳ Aguardando mais ${(tempoRestante/1000).toFixed(1)}s...`);
+          console.log(`Aguardando mais ${(tempoRestante/1000).toFixed(1)}s...`);
           await new Promise(resolve => setTimeout(resolve, tempoRestante));
         }
 
         clearInterval(progressInterval);
 
-        // Marcar todas etapas como concluídas
-        for (let i = 1; i <= 7; i++) {
-          updateStep(i, 'done');
-        }
-
         progressBar.style.width = '100%';
-        progressBar.textContent = '✅ 100% - Concluído!';
+        progressBar.textContent = '100% - Concluído!';
 
         // Processar resposta
         let resultado;
         try {
           resultado = await resposta.json();
-          console.log('📊 Resultado:', resultado);
+          console.log('Resultado:', resultado);
         } catch (e) {
-          console.warn('⚠️ Resposta não é JSON, continuando...');
+          console.warn('Resposta não é JSON, continuando...');
           resultado = { sucesso: true };
         }
 
@@ -481,41 +400,35 @@
         // Mensagem de sucesso
         mensagem.style.color = 'green';
         mensagem.style.backgroundColor = '#e6ffe6';
-        mensagem.innerHTML = `✅ <strong>Processamento concluído com sucesso!</strong><br>Dados salvos e prontos para visualização.`;
+        mensagem.innerHTML = `<strong>Processamento concluído com sucesso!</strong><br>Dados salvos e prontos para visualização.`;
 
         // Countdown de 5 segundos antes de redirecionar
         let timeLeft = 5;
         const countdownInterval = setInterval(() => {
           if (timeLeft > 0) {
-            countdown.textContent = `🔄 Redirecionando em ${timeLeft}s...`;
+            countdown.textContent = `Redirecionando em ${timeLeft}s...`;
             timeLeft--;
           } else {
             clearInterval(countdownInterval);
-            console.log('🔄 Redirecionando para dados.html...');
+            console.log('Redirecionando para dados.html...');
             window.location.href = `dados?t=${Date.now()}`;
           }
         }, 1000);
 
       } catch (erro) {
-        console.error('❌ Erro:', erro);
+        console.error('Erro:', erro);
         clearInterval(progressInterval);
         
         // Resetar UI
         progressContainer.style.display = 'none';
-        processingInfo.style.display = 'none';
+        processingMessage.style.display = 'none';
         statsSummary.style.display = 'none';
         botao.disabled = false;
         botao.textContent = "Enviar Arquivo";
         
-        // Resetar etapas
-        document.querySelectorAll('.processing-step').forEach(step => {
-          step.classList.remove('active', 'done');
-          step.querySelector('span').textContent = '⏳';
-        });
-        
         mensagem.style.color = 'red';
         mensagem.style.backgroundColor = '#ffe6e6';
-        mensagem.innerHTML = `❌ <strong>Erro ao processar:</strong> ${erro.message}<br>Por favor, tente novamente.`;
+        mensagem.innerHTML = `<strong>Erro ao processar:</strong> ${erro.message}<br>Por favor, tente novamente.`;
       }
     });
   </script>
