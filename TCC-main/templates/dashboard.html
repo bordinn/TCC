@@ -250,11 +250,11 @@
     <button class="btn-action btn-refresh" onclick="location.reload()">
       🔄 Atualizar
     </button>
-    <button class="btn-action btn-reports" onclick="window.location.href='relatorio.html'">
+    <button class="btn-action btn-reports" onclick="window.location.href='{{ url_for('dados')}}'">
       📋 Relatórios
     </button>
-    <button class="btn-action btn-back" onclick="window.location.href='upload.html'">
-      ⬅️ Voltar
+    <button class="btn-action btn-back" onclick="window.location.href='{{ url_for('upload')}}'">
+      ⬅️ Enviar outro arquivo
     </button>
   </div>
 
