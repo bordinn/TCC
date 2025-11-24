@@ -203,6 +203,16 @@
           </div>
         </div>
       </div>
+
+      <div class="chart-card">
+  <div class="chart-title">
+    <span>Distribuição das Notas de Conhecimento</span>
+  </div>
+  <div class="chart-container">
+    <canvas id="histogramaConceito"></canvas>
+  </div>
+</div>
+
       
       <!-- Rankings -->
       <div class="ranking-section">
@@ -378,6 +388,60 @@
         }
       });
     }
+
+    function renderHistogramaConceito(data) {
+  const relatorios = data.relatorios || {};
+  let todosFuncionarios = [];
+
+  for (const dept in relatorios) {
+    if (Array.isArray(relatorios[dept])) {
+      todosFuncionarios = todosFuncionarios.concat(relatorios[dept]);
+    }
+  }
+
+  // Extrai as notas de CONCEITO (1–5)
+  const conceitos = todosFuncionarios.map(f =>
+    parseFloat(f["Conceito (1-5 Likert)"] || 0)
+  );
+
+  // Contagem de notas
+  const bins = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+  conceitos.forEach(n => {
+    if (bins[n] !== undefined) bins[n]++;
+  });
+
+  const ctx = document.getElementById("histogramaConceito");
+
+  if (chartsInstances.histogramaConceito) chartsInstances.histogramaConceito.destroy();
+
+  chartsInstances.histogramaConceito = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: ["1", "2", "3", "4", "5"],
+      datasets: [
+        {
+          label: "Quantidade de Funcionários",
+          data: Object.values(bins),
+          backgroundColor: "rgba(224, 123, 60, 0.7)",
+          borderColor: "rgba(224, 123, 60, 1)",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true },
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+}
+
 
     function renderCHAChart(data) {
       const relatorios = data.relatorios || {};
@@ -602,6 +666,7 @@
         renderCHAChart(data);
         renderRankings(data);
         renderBonificacoes(data);
+        renderHistogramaConceito(data);
         renderDeptDistribution(data);
       })
       .catch(error => {
